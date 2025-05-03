@@ -1,0 +1,10 @@
+spring:
+    application:
+        name: backend
+    datasource:
+        url: jdbc:postgresql://postgresql:5432/api 
+        username: admin
+        password: admin
+    jpa:
+     hibernate:
+        ddl-auto: update

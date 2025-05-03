@@ -1,0 +1,45 @@
+services:
+  minio:
+    build: ./minio
+    container_name: minio
+    ports:
+      - 9001:9001
+      - 9000:9000
+    environment:
+      MINIO_ROOT_USER: ROOTUSER
+      MINIO_ROOT_PASSWORD: CHANGEME123
+    volumes:
+      - H:\Projetos\images:/data
+    networks:
+      - public_network
+  postgresql:
+    build: ./postgresql
+    container_name: postgresql
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: api
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - public_network
+  springboot: 
+    build: 
+      context: ./
+      dockerfile: ./spring/Dockerfile
+    container_name: springboot
+    ports:
+      - 8080:8080
+    networks:
+      - public_network
+    depends_on:
+      - postgresql
+      - minio
+    
+networks:
+  public_network:
+
+volumes:
+  postgres_data:
