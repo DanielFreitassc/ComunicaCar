@@ -16,7 +16,6 @@ public record UserRequestDto(
     @NotBlank(groups = OnCreate.class, message = "Username não pode ser um campo em branco") 
     String username,
     
-
     @Length(groups = OnCreate.class, min = 10, message = "A senha deve ter pelo menos 10 caracteres.")
     @Pattern(groups = OnCreate.class, regexp = "^(?=.*[a-z])(?=.*[A-Z]).*$", message = "A senha deve conter ao menos uma letra maiúscula e uma letra minúscula.")  
     @NotBlank(groups = OnCreate.class, message = "Senha não pode ser um campo em branco") 
