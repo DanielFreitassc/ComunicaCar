@@ -2,9 +2,14 @@ spring:
     application:
         name: backend
     datasource:
-        url: jdbc:postgresql://postgresql:5432/api 
+        #url: jdbc:postgresql://postgresql:5432/db
+        url: jdbc:h2:mem:db
         username: admin
-        password: admin
+        password: Senha12345
     jpa:
      hibernate:
         ddl-auto: update
+api:
+ security:
+    token:
+        secret: ${JTW_SECRET:my-secret-key}
