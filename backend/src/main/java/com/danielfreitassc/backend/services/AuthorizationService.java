@@ -12,7 +12,6 @@ import com.danielfreitassc.backend.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Service
 @RequiredArgsConstructor
 public class AuthorizationService implements UserDetailsService{

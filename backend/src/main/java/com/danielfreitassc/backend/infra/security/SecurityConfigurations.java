@@ -43,6 +43,8 @@ public class SecurityConfigurations {
                 .requestMatchers(HttpMethod.GET,"/users/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
                 .requestMatchers(HttpMethod.PATCH,"/users/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
 
+                .requestMatchers(HttpMethod.POST,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET,"/validation").permitAll()
                 
