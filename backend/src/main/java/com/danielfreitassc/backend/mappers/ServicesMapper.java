@@ -8,7 +8,6 @@ import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.danielfreitassc.backend.dtos.MessageAndIdDto;
 import com.danielfreitassc.backend.dtos.ServicesRequestDto;
 import com.danielfreitassc.backend.dtos.ServicesResponseDto;
 import com.danielfreitassc.backend.models.ServicesEntity;

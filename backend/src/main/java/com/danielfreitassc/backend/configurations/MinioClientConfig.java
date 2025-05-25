@@ -9,6 +9,6 @@ import io.minio.MinioClient;
 public class MinioClientConfig {
     @Bean
     MinioClient minioClient() {
-        return MinioClient.builder().endpoint("http://localhost:9000").credentials("ROOTUSER", "CHANGEME123").build();
+        return MinioClient.builder().endpoint("http://minio:9000").credentials("ROOTUSER", "CHANGEME123").build();
     }
 }

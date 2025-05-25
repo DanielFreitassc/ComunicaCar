@@ -1,4 +1,4 @@
-FROM quay.io/minio/minio
+FROM minio/minio:RELEASE.2025-01-20T14-49-07Z
 
 # Define o diretório de trabalho
 WORKDIR /data

@@ -19,7 +19,6 @@ public record ServicesRequestDto(
     String description,
     @NotBlank(message = "Número para contato é necessário")
     String contactNumber,
-    @NotNull(message = "Indicar um mecânico é necessário")
     UUID mechanicId,
     @JsonFormat(pattern = "dd/MM/yyyy")
     LocalDate conclusionDate,
