@@ -38,3 +38,9 @@ CREATE TABLE media (
     CONSTRAINT fk_service FOREIGN KEY (service_id) REFERENCES services(id)
 );
 
+CREATE TABLE service_ticket_sequence (
+    year_key VARCHAR(4) PRIMARY KEY,
+    last_number INT NOT NULL
+);
+
+

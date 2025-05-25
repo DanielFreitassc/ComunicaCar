@@ -15,27 +15,29 @@ import com.danielfreitassc.backend.dtos.MessageResponseDto;
 import com.danielfreitassc.backend.dtos.ServicesRequestDto;
 import com.danielfreitassc.backend.dtos.ServicesResponseDto;
 import com.danielfreitassc.backend.mappers.ServicesMapper;
+import com.danielfreitassc.backend.models.ServiceTicketSequenceEntity;
 import com.danielfreitassc.backend.models.ServicesEntity;
 import com.danielfreitassc.backend.models.StatusEnum;
 import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.repositories.ServiceTicketSequenceRepository;
 import com.danielfreitassc.backend.repositories.ServicesRepository;
 import com.danielfreitassc.backend.repositories.UserRepository;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class ServicesService {
     private final ServicesRepository servicesRepository;
+    private final ServiceTicketSequenceRepository serviceTicketSequenceRepository;
     private final ServicesMapper servicesMapper;
     private final UserRepository userRepository;
 
     public MessageAndIdDto create(ServicesRequestDto servicesRequestDto) {
         findMechanicOrThrow(servicesRequestDto.mechanicId());
-        String year = String.valueOf(LocalDate.now().getYear());
 
-        long count = servicesRepository.countByTicketNumberStartingWith(year);
-        String ticketNumber = String.format("%s%04d", year, count + 1);
+        String ticketNumber = generateTicketNumber();
         
         ServicesEntity servicesEntity = servicesMapper.toEntity(servicesRequestDto);
         servicesEntity.setTicketNumber(ticketNumber);
@@ -80,4 +82,24 @@ public class ServicesService {
         return services.get();
     }
 
+
+    @Transactional
+    public String generateTicketNumber() {
+        String year = String.valueOf(LocalDate.now().getYear());
+
+        Optional<ServiceTicketSequenceEntity> optional = serviceTicketSequenceRepository.findById(year);
+
+        ServiceTicketSequenceEntity sequence = optional.orElseGet(() -> {
+            ServiceTicketSequenceEntity newSeq = new ServiceTicketSequenceEntity();
+            newSeq.setYearKey(year);
+            newSeq.setLastNumber(0);
+            return newSeq;
+        });
+
+        int next = sequence.getLastNumber() + 1;
+        sequence.setLastNumber(next);
+        serviceTicketSequenceRepository.save(sequence);
+
+        return String.format("%s%04d", year, next);
+    }
 }
