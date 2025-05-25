@@ -1,5 +1,8 @@
 package com.danielfreitassc.backend.models;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
 public enum StatusEnum {
     READY("Pronto"),
     PROGRESS("Em progresso"),
@@ -11,6 +14,7 @@ public enum StatusEnum {
         this.status = status;
     }
 
+    @JsonValue
     public String getStatus() {
         return status;
     }
@@ -20,12 +24,22 @@ public enum StatusEnum {
         return status;
     }
 
-    public static StatusEnum fromStatus(String status) {
+    @JsonCreator
+    public static StatusEnum fromStatus(String input) {
+        if (input == null) return null;
+
         for (StatusEnum s : values()) {
-            if (s.status.equalsIgnoreCase(status)) {
+            if (s.name().equalsIgnoreCase(input)) {
                 return s;
             }
         }
-        throw new IllegalArgumentException("Status desconhecido: " + status);
+
+        for (StatusEnum s : values()) {
+            if (s.status.equalsIgnoreCase(input)) {
+                return s;
+            }
+        }
+
+        throw new IllegalArgumentException("Status desconhecido: " + input);
     }
 }

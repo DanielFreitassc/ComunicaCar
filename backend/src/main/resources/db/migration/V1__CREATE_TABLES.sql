@@ -22,14 +22,14 @@ CREATE TABLE services (
     contact_number VARCHAR(9) NOT NULL,
     mechanic_id UUID NOT NULL,
     conclusion_date DATE NOT NULL,
-    status VARCHAR(50) NOT NULL,
+    status VARCHAR(50),
     created_at TIMESTAMP NOT NULL,
 
     CONSTRAINT fk_mechanic FOREIGN KEY (mechanic_id) REFERENCES users(id)
 );
 
--- Create 'photos' table
-CREATE TABLE photos (
+-- Create 'media' table
+CREATE TABLE media (
     id UUID PRIMARY KEY,
     service_id UUID NOT NULL,
     image_id UUID NOT NULL UNIQUE,
@@ -37,3 +37,4 @@ CREATE TABLE photos (
 
     CONSTRAINT fk_service FOREIGN KEY (service_id) REFERENCES services(id)
 );
+

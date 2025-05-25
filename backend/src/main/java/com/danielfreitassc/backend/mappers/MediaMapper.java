@@ -10,6 +10,7 @@ import com.danielfreitassc.backend.models.MediaEntity;
 
 @Mapper(componentModel = "spring")
 public interface MediaMapper {
+    @Mapping(target = "serviceId", source = "serviceId.id")
     MediaResponseDto toDto(MediaEntity mediaEntity);
 
     @Mapping(target = "id", ignore = true)

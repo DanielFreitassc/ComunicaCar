@@ -44,6 +44,16 @@ public class SecurityConfigurations {
                 .requestMatchers(HttpMethod.PATCH,"/users/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
 
                 .requestMatchers(HttpMethod.POST,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.GET,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.PUT,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.DELETE,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.GET,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+
+                .requestMatchers(HttpMethod.POST,"/media").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.GET,"/media").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.GET,"/media/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.PUT,"/media/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
+                .requestMatchers(HttpMethod.DELETE,"/media/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY")
 
                 .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET,"/validation").permitAll()

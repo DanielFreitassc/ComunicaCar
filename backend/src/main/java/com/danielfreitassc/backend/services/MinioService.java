@@ -26,8 +26,14 @@ public class MinioService {
                 .bucket("images")  
                 .object(imageId)
                 .stream(image.getInputStream(), image.getSize(), -1)
+                .contentType(image.getContentType())
                 .build()
         );
+    }
+
+    public void update(String oldImageId ,String imageId, MultipartFile image) throws Exception {
+        remove(oldImageId);
+        upload(imageId, image);
     }
 
     public void remove(String imageId) throws Exception {
