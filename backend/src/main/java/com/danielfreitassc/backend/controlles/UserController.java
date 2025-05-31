@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,5 +50,10 @@ public class UserController {
     @PatchMapping("/{id}")
     public MessageResponseDto patchUser(@PathVariable UUID id, @RequestBody @Valid UserRequestDto userDTO) {
         return userService.patchUser(id, userDTO);
+    }
+
+    @DeleteMapping("/{id}")
+    private MessageResponseDto deleteUser(@PathVariable UUID id) {
+        return userService.deleteUser(id);
     }
 }

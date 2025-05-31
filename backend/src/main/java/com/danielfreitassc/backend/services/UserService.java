@@ -1,5 +1,6 @@
 package com.danielfreitassc.backend.services;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,7 @@ import com.danielfreitassc.backend.dtos.UserRequestDto;
 import com.danielfreitassc.backend.dtos.UserResponseDto;
 import com.danielfreitassc.backend.mappers.UserMapper;
 import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.models.UserRole;
 import com.danielfreitassc.backend.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -73,6 +75,20 @@ public class UserService {
         
         userRepository.save(userEntity);
         return new MessageResponseDto("Usuário atualizado com sucesso.");
+    }
+
+    public MessageResponseDto deleteUser(UUID id) {
+        UserEntity userEntity = checkUserId(id);
+    
+        if(userEntity.getRole() == UserRole.ADMIN) countAdmin(UserRole.ADMIN);
+
+        userRepository.delete(userEntity);
+        return new MessageResponseDto("Usuário removido com sucesso.");
+    }
+
+    private void countAdmin(UserRole role) {
+        long adminCount = userRepository.countByRole(role);
+        if(adminCount == 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Não é possível remover o único ADMIN restante");
     }
 
     private UserEntity checkUserId(UUID id) {
