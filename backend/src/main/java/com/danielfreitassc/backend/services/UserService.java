@@ -1,6 +1,5 @@
 package com.danielfreitassc.backend.services;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,10 +27,7 @@ public class UserService {
     private final UserMapper userMapper;
     
     public MessageResponseDto create(UserRequestDto userRequestDto) {
-        Optional<UserEntity> existingUser = userRepository.findByUsername(userRequestDto.username());
-        if (existingUser.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário já cadastrado.");
-        }
+        nameExists(userRequestDto.username(), null);
         UserEntity userEntity = userMapper.toEntity(userRequestDto);
 
         String encryptedPassword = new BCryptPasswordEncoder().encode(userRequestDto.password());
@@ -54,6 +50,7 @@ public class UserService {
     }
 
     public MessageResponseDto patchUser(UUID id, UserRequestDto userRequestDto) {
+
         UserEntity userEntity = checkUserId(id);
         
         if (userRequestDto.name() != null && !userRequestDto.name().isBlank()) {
@@ -61,10 +58,16 @@ public class UserService {
         }
 
         if (userRequestDto.username() != null && !userRequestDto.username().isBlank()) {
+            nameExists(userRequestDto.username(), id);
             userEntity.setUsername(userRequestDto.username());
         }
 
         if (userRequestDto.role() != null) {
+            if (userEntity.getRole() == UserRole.ADMIN && userRequestDto.role() != UserRole.ADMIN) {
+                long adminCount = userRepository.countByRole(UserRole.ADMIN);
+                
+                if (adminCount == 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Não é possível alterar a role do único admin restante.");
+            }
             userEntity.setRole(userRequestDto.role());
         }
 
@@ -86,9 +89,17 @@ public class UserService {
         return new MessageResponseDto("Usuário removido com sucesso.");
     }
 
+    private void nameExists(String username, UUID currentId) {
+        Optional<UserEntity> existingUser = userRepository.findByUsername(username);
+
+        if (existingUser.isPresent() && (currentId == null || !existingUser.get().getId().equals(currentId))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Usuário já cadastrado.");
+        }
+    }
+
     private void countAdmin(UserRole role) {
         long adminCount = userRepository.countByRole(role);
-        if(adminCount == 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Não é possível remover o único ADMIN restante");
+        if(adminCount == 1) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Não é possível remover o único admin restante");
     }
 
     private UserEntity checkUserId(UUID id) {
