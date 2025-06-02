@@ -28,7 +28,7 @@ export default function WelcomeScreen() {
                     acompanhem tudo em tempo real!{" "}
                 </Text>
             </Text>
-            <View style={{flex:1, flexDirection:"row", justifyContent: "space-around", gap:10 }}>
+            <View style={styles.ButtonContainer}>
                 <Button title="Entrar" style={{ width: "50%" }}/>
                 <Button title="Criar uma conta" variant="outlined" style={{ width: "50%"}}/>
             </View>
@@ -80,5 +80,11 @@ const styles = StyleSheet.create({
         fontSize: 13,
         marginVertical: 5,
         fontFamily: "Cairo_700Bold"
+    },
+    ButtonContainer: {
+        flex:1, 
+        flexDirection:"row", 
+        justifyContent: "space-around", 
+        gap:10 
     }
 })
