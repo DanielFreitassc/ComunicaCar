@@ -4,7 +4,7 @@ import colors from "../theme/colors";
 export default function WelcomeScreen() {
     return(
         <View style={styles.container}>
-            <Text>Bem vindo</Text>
+            <Text>Bem vind</Text>
         </View>
     )
 }
