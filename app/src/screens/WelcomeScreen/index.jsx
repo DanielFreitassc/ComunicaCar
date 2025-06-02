@@ -1,4 +1,4 @@
-import { View,Text, StyleSheet, Image } from "react-native";
+import { View,Text, StyleSheet, Image, SafeAreaView } from "react-native";
 import colors from "../theme/colors";
 import Button from "../../components/Button";
 
@@ -18,7 +18,20 @@ export default function WelcomeScreen() {
             </Text>
 
             <Image style={styles.CarImage} source={require("../../../assets/Car.png")}/>
-            <Button/>
+            <Text style={styles.SubText}>
+                Aqui os mecânicos{" "}
+                <Text style={styles.SubTextBold}>
+                    atualizam os serviços{" "}
+                </Text>
+                e os donos de carro{" "}
+                <Text style={styles.SubTextBold}>
+                    acompanhem tudo em tempo real!{" "}
+                </Text>
+            </Text>
+            <SafeAreaView style={{flex:1, flexDirection:"row", justifyContent: "space-around"}}>
+                <Button title="Entrar" style={{ width: 142.38 }}/>
+                <Button title="Criar uma conta" variant="outlined" style={{ width:142.38}}/>
+            </SafeAreaView>
  
         </View>
     )
@@ -29,8 +42,8 @@ const styles = StyleSheet.create({
     container: {
         flex:1,
         backgroundColor: colors.white,
-        paddingHorizontal: 60,
-        paddingVertical: 150
+        paddingHorizontal: 40,
+        paddingVertical: 20
     },
     logo : {
         width:70,
@@ -57,5 +70,16 @@ const styles = StyleSheet.create({
         width:366,
         height:366,
         alignSelf: "center"
+    },
+    SubText: {
+        fontSize: 16,
+        marginVertical: 5,
+        fontFamily: "Cairo_500Medium",
+        color: colors.grayDark
+    },
+    SubTextBold: {
+        fontSize: 13,
+        marginVertical: 5,
+        fontFamily: "Cairo_700Bold"
     }
 })
