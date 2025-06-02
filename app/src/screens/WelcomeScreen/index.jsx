@@ -28,11 +28,10 @@ export default function WelcomeScreen() {
                     acompanhem tudo em tempo real!{" "}
                 </Text>
             </Text>
-            <SafeAreaView style={{flex:1, flexDirection:"row", justifyContent: "space-around"}}>
-                <Button title="Entrar" style={{ width: 142.38 }}/>
-                <Button title="Criar uma conta" variant="outlined" style={{ width:142.38}}/>
-            </SafeAreaView>
- 
+            <View style={{flex:1, flexDirection:"row", justifyContent: "space-around", gap:10 }}>
+                <Button title="Entrar" style={{ width: "50%" }}/>
+                <Button title="Criar uma conta" variant="outlined" style={{ width: "50%"}}/>
+            </View>
         </View>
     )
 }
