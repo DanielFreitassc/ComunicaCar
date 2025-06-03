@@ -71,6 +71,7 @@ public class SecurityConfigurations {
         configuration.setAllowCredentials(true);
         configuration.addAllowedOrigin("http://localhost:19000");
         configuration.addAllowedOrigin("http://localhost:19002");
+        configuration.addAllowedOrigin("http://localhost:3000");
         configuration.addAllowedMethod(HttpMethod.POST);
         configuration.addAllowedMethod(HttpMethod.GET);
         configuration.addAllowedMethod(HttpMethod.PUT);
