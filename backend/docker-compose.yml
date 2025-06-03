@@ -9,7 +9,7 @@ services:
       MINIO_ROOT_USER: ROOTUSER
       MINIO_ROOT_PASSWORD: CHANGEME123
     volumes:
-      - H:\Projetos\images:/data
+      - /home/dan/Documentos/minio:/data
     networks:
       - public_network
   postgresql:

@@ -49,7 +49,9 @@ public class SecurityConfigurations {
                 .requestMatchers(HttpMethod.PUT,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.DELETE,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
-
+                
+                .requestMatchers(HttpMethod.GET,"/services/public/{id}").permitAll()
+                
                 .requestMatchers(HttpMethod.POST,"/media").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/media").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/media/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")

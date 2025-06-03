@@ -12,6 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.danielfreitassc.backend.dtos.MessageAndIdDto;
 import com.danielfreitassc.backend.dtos.MessageResponseDto;
+import com.danielfreitassc.backend.dtos.ServicePublicResponseDto;
 import com.danielfreitassc.backend.dtos.ServicesRequestDto;
 import com.danielfreitassc.backend.dtos.ServicesResponseDto;
 import com.danielfreitassc.backend.mappers.ServicesMapper;
@@ -53,6 +54,10 @@ public class ServicesService {
     public ServicesResponseDto getService(String id) {
         return servicesMapper.toDto(findServicesOrThrow(id));
     }   
+
+    public ServicePublicResponseDto getPublicService(String id) {
+        return servicesMapper.toPulic(findServicesOrThrow(id));
+    }
 
     public MessageResponseDto delete(String id) {
         ServicesEntity servicesEntity = findServicesOrThrow(id);

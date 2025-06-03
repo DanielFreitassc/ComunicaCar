@@ -38,7 +38,7 @@ public class SecurityFilter extends OncePerRequestFilter {
         boolean isPublicEndpoint =
                 (path.equals("/users") && request.getMethod().equals("POST")) ||
                 (path.equals("/auth/login") && request.getMethod().equals("POST"))||
-                (path.equals("/validation") && request.getMethod().equals("GET"));
+                (path.startsWith("/services/public/") && request.getMethod().equals("GET"));
 
         var token = recoverToken(request);
 

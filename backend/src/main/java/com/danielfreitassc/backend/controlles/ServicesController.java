@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.danielfreitassc.backend.dtos.MessageAndIdDto;
 import com.danielfreitassc.backend.dtos.MessageResponseDto;
+import com.danielfreitassc.backend.dtos.ServicePublicResponseDto;
 import com.danielfreitassc.backend.dtos.ServicesRequestDto;
 import com.danielfreitassc.backend.dtos.ServicesResponseDto;
 import com.danielfreitassc.backend.services.ServicesService;
@@ -42,6 +43,11 @@ public class ServicesController {
     @GetMapping("/{id}")
     public ServicesResponseDto getService(@PathVariable String id) {
         return servicesService.getService(id);
+    }
+
+    @GetMapping("/public/{id}")
+    public ServicePublicResponseDto getPublicService(@PathVariable String id) {
+        return servicesService.getPublicService(id);
     }
 
     @PutMapping("/{id}")
