@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffdedf;         /* fundo rosado claro (identidade visual) */
+  --foreground: #333333;         /* texto principal bem legível */
+  --gray-light: #bfbfbf;         /* cinza claro neutro */
+  --gray-dark: #555555;          /* cinza escuro para contraste */
+  --primary: #cf0f47;            /* vermelho escuro da sua identidade */
+  --secondary: #ff4d6d;          /* vermelho vibrante levemente suavizado */
+  --brand-background: #ffe6e9;   /* variante ainda mais clara do background */
+  --white: #ffffff;
+  --black: #1a1a1a;              /* preto mais suave para harmonia */
+  --surface: #fff6f7;            /* cards/superfícies com leve destaque */
+  --border: #e3c7cb;             /* borda rosada discreta */
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+  }
+  
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-gray-light: var(--gray-light);
+  --color-gray-dark: var(--gray-dark);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-brand-background: var(--brand-background);
+  --color-white: var(--white);
+  --color-black: var(--black);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #111827;
+    --foreground: #f3f4f6;
+    --gray-light: #6b7280;
+    --gray-dark: #d1d5db;
+    --primary: #ff4d6d;
+    --secondary: #ff6b81;
+    --brand-background: #1f2937;
+    --surface: #1f2937;
+    --border: #374151;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
