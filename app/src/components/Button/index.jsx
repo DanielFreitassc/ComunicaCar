@@ -1,5 +1,5 @@
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import colors from '../../screens/theme/colors';
+import colors from '../../globals/theme/colors';
 
 export default function Button({ title, onPress, style, textStyle, variant = 'filled' }) {
   const isOutlined = variant === 'outlined';
