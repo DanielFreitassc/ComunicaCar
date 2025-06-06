@@ -1,4 +1,4 @@
-import { useFonts, Cairo_400Regular, Cairo_500Medium,Cairo_700Bold } from '@expo-google-fonts/cairo';
+import { useFonts, Cairo_400Regular, Cairo_500Medium, Cairo_700Bold } from '@expo-google-fonts/cairo';
 import { RootNavigationContainer } from './src/navigation';
 import { AuthProvider } from './src/contexts/auth/authContext';
 
@@ -11,12 +11,12 @@ export default function App() {
   });
 
   if (!fontsLoaded) {
-    return null; 
+    return null;
   }
 
   return (
     <AuthProvider>
-      <RootNavigationContainer/>
+      <RootNavigationContainer />
     </AuthProvider>
   );
 }

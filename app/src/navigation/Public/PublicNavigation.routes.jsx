@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import Welcome from '../../screens/Welcome';
-import { Login } from '../../screens/Login';
+import { Welcome } from '../../screens/Comuns/Welcome';
+import { Login } from '../../screens/Comuns/Login';
 
 export function PublicNavigationRoutes() {
     const Stack = createNativeStackNavigator();

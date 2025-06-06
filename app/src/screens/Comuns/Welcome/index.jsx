@@ -1,11 +1,12 @@
 import { View, Text, StyleSheet, Image, SafeAreaView } from "react-native";
-import colors from "../../globals/theme/colors";
-import Button from "../../components/Button";
+import colors from "../../../globals/theme/colors";
+import Button from "../../../components/Button";
 import { Linking } from "react-native";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { Container } from "../../../components/Container";
 
-export default function Welcome() {
+export function Welcome() {
     const navigation = useNavigation();
 
     function createAccount() {
@@ -23,10 +24,7 @@ export default function Welcome() {
         navigation.navigate("Login")
     }
     return (
-        <SafeAreaView style={styles.container}>
-            <Image source={require("../../../assets/MiniCar.png")}
-                style={styles.logo}
-            />
+        <Container style={styles.container}>
             <Text style={styles.text}>
                 <Text style={styles.TextFirstLine}>Bem-vindo ao futuro:{" "}</Text>
                 seu carro{" "}
@@ -36,13 +34,22 @@ export default function Welcome() {
                 sem surpresas.
             </Text>
 
-            <Image style={styles.CarImage} source={require("../../../assets/Car.png")} />
+            <Image style={styles.CarImage} source={require("../../../../assets/Car.png")} />
 
             <View style={styles.ButtonContainer}>
-                <Button onPress={login} title="Entrar" style={{ width: "50%" }} />
-                <Button onPress={createAccount} title="Criar uma conta" variant="outlined" style={{ width: "50%" }} />
+                <Button
+                    onPress={login}
+                    title="Entrar"
+                    style={styles.button}
+                />
+                <Button
+                    onPress={createAccount}
+                    title="Criar uma conta"
+                    variant="outlined"
+                    style={styles.button}
+                />
             </View>
-        </SafeAreaView>
+        </Container>
     )
 }
 
@@ -50,11 +57,7 @@ export default function Welcome() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.white,
-        paddingHorizontal: 40,
-        flexDirection: 'column',
-        alignContent: 'center',
-        justifyContent: 'center',
+        justifyContent: 'center'
     },
     logo: {
         width: 70,
@@ -77,7 +80,7 @@ const styles = StyleSheet.create({
         fontFamily: "Cairo_700Bold"
     },
     CarImage: {
-        alignSelf: "center"
+        alignSelf: "center",
     },
     SubText: {
         fontSize: 16,
@@ -92,7 +95,13 @@ const styles = StyleSheet.create({
     },
     ButtonContainer: {
         flexDirection: "row",
-        justifyContent: "space-around",
         gap: 10,
-    }
+        width: '100%',
+        justifyContent: 'space-between',
+        paddingHorizontal: 0, 
+    },
+    button: {
+        flex: 1, 
+        minWidth: 0,
+    },
 })
