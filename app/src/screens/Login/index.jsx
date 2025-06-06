@@ -3,9 +3,34 @@ import { useState } from "react";
 import colors from "../../globals/theme/colors";
 import Button from "../../components/Button";
 import { Feather } from '@expo/vector-icons';
+import { api } from "../../infra/apis/api";
+import { useAuth } from '../../hooks/authHook';
+import { AuthStore } from '../../infra/stores/AuthStore';
+import { Alert } from "react-native";
 
 export function Login() {
+    const { setToken } = useAuth();
+    
     const [passwordVisible, setPasswordVisible] = useState(false);
+    const [username, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+
+    const authStore = new AuthStore();
+
+    const handleLogin = async () => {
+        if (!username || !password) {
+            Alert.alert('Erro', 'Preencha todos os campos');
+            return;
+        }
+
+        try {
+            const response = await api.post('/auth/login', { username, password });
+            await authStore.set(response.data.token);
+            setToken(response.data.token);
+        } catch (error) {
+            Alert.alert('Erro', 'Email ou senha inválidos');
+        }
+    }
 
     return (
         <View style={styles.container}>
@@ -20,6 +45,8 @@ export function Login() {
             <View style={styles.inputContainer}>
                 <Feather name="user" size={18} color={colors.gray} style={styles.icon} />
                 <TextInput
+                    value={username}
+                    onChangeText={setEmail}
                     placeholder="Nome de usuário"
                     placeholderTextColor={colors.gray}
                     style={styles.input}
@@ -29,6 +56,8 @@ export function Login() {
             <View style={styles.inputContainer}>
                 <Feather name="lock" size={18} color={colors.gray} style={styles.icon} />
                 <TextInput
+                    value={password}
+                    onChangeText={setPassword}
                     placeholder="Senha"
                     placeholderTextColor={colors.gray}
                     secureTextEntry={!passwordVisible}
@@ -44,7 +73,7 @@ export function Login() {
                 </TouchableOpacity>
             </View>
 
-            <Button title="Entrar" style={styles.loginButton} />
+            <Button title="Entrar" style={styles.loginButton} onPress={handleLogin} />
 
             <TouchableOpacity>
                 <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
