@@ -4,5 +4,6 @@ WORKDIR /data
 
 EXPOSE 9000 9001
 
-CMD sh -c 'minio server /data --console-address ":$PORT" --address ":$PORT"'
+CMD ["sh", "-c", "minio server /data --console-address \":$PORT\" --address \":$PORT\""]
+
 
