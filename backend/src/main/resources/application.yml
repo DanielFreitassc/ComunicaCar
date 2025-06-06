@@ -2,8 +2,8 @@ spring:
     application:
         name: backend
     datasource:
-        url: jdbc:postgresql://postgresql:5432/db
-        #url: jdbc:h2:mem:db
+        #url: jdbc:postgresql://postgresql:5432/db
+        url: jdbc:h2:mem:db
         username: admin
         password: admin
     # jpa:
