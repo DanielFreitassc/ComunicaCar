@@ -2,14 +2,22 @@ spring:
     application:
         name: backend
     datasource:
-        #url: jdbc:postgresql://postgresql:5432/db
-        url: jdbc:h2:mem:db
-        username: admin
-        password: admin
-    # jpa:
-    #  hibernate:
-    #     ddl-auto: update
+        url: jdbc:postgresql://${DATABASE_PUBLIC_URL}
+        #url: jdbc:h2:mem:db
+        username: ${POSTGRESS_USER:postgres}
+        password: ${POSTGRESS_PASSWORD:postgres}
 api:
  security:
     token:
-        secret: ${JTW_SECRET:my-secret-key}
+        secret: ${JWT_SECRET:my-secret-key}
+
+minio:
+    config:
+        url: ${MINIO_URL:http://localhost:9000}
+        username: ${MINIO_USERNAME:ROOTUSER}
+        password: ${MINIO_PASSWORD:CHANGEME123}
+
+user:
+    mock:
+        username: Admin
+        password: admin

@@ -17,10 +17,10 @@ public class AdminUserInitializer {
 
     private final UserRepository userRepository;
     private final UserService userService;
-    @Value("${spring.datasource.username}")
+    @Value("${user.mock.username}")
     private String adminUsername;
 
-    @Value("${spring.datasource.password}")
+    @Value("${user.mock.password}")
     private String adminPassword;
 
     @PostConstruct
