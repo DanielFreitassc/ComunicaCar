@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,6 +19,7 @@ import com.danielfreitassc.backend.dtos.MessageResponseDto;
 import com.danielfreitassc.backend.dtos.ServicePublicResponseDto;
 import com.danielfreitassc.backend.dtos.ServicesRequestDto;
 import com.danielfreitassc.backend.dtos.ServicesResponseDto;
+import com.danielfreitassc.backend.models.StatusEnum;
 import com.danielfreitassc.backend.services.ServicesService;
 
 import jakarta.validation.Valid;
@@ -36,8 +38,8 @@ public class ServicesController {
     }
 
     @GetMapping
-    public Page<ServicesResponseDto> getServices(Pageable pageable) {
-        return servicesService.getServices(pageable);
+    public Page<ServicesResponseDto> getServices(Pageable pageable,@RequestParam(required = false) String status) {
+        return servicesService.getServices(pageable,status);
     }
 
     @GetMapping("/{id}")

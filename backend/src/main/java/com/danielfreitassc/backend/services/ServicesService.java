@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -47,9 +48,22 @@ public class ServicesService {
         return new MessageAndIdDto("Ordem de serviço cadastrada com sucesso", servicesEntity.getId());
     }
 
-    public Page<ServicesResponseDto> getServices(Pageable pageable) {
-        return servicesRepository.findAll(pageable).map(servicesMapper::toDto);
-    }
+    public Page<ServicesResponseDto> getServices(Pageable pageable, String status) {
+        StatusEnum statusEnum = null;
+
+        if(status != null && !status.isBlank()) {
+            try {
+                statusEnum = StatusEnum.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Status inválido");
+            }
+
+        }
+        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatus(statusEnum);
+        Page<ServicesEntity> servicePage = servicesRepository.findAll(spec, pageable);
+
+        return servicePage.map(servicesMapper::toDto);
+    }   
 
     public ServicesResponseDto getService(String id) {
         return servicesMapper.toDto(findServicesOrThrow(id));
