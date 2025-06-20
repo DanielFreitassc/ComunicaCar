@@ -1,5 +1,7 @@
 package com.danielfreitassc.backend.controlles;
 
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -38,8 +40,8 @@ public class ServicesController {
     }
 
     @GetMapping
-    public Page<ServicesResponseDto> getServices(Pageable pageable,@RequestParam(required = false) String status) {
-        return servicesService.getServices(pageable,status);
+    public Page<ServicesResponseDto> getServices(Pageable pageable,@RequestParam(required = false) String status, @RequestParam(required = true) String id) {
+        return servicesService.getServices(pageable,status, id);
     }
 
     @GetMapping("/{id}")
