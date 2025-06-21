@@ -6,9 +6,6 @@ spring:
         #url: jdbc:h2:mem:db
         username: ${POSTGRESS_USER:postgres}
         password: ${POSTGRESS_PASSWORD:postgres}
-    jpa:
-        hibernate:
-            ddl-auto: create
 api:
  security:
     token:
