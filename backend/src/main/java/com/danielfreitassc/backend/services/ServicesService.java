@@ -48,22 +48,33 @@ public class ServicesService {
         return new MessageAndIdDto("Ordem de serviço cadastrada com sucesso", servicesEntity.getId());
     }
 
-    public Page<ServicesResponseDto> getServices(Pageable pageable, String status) {
+    public Page<ServicesResponseDto> getServices(Pageable pageable, String status, String mechanicIdStr) {
         StatusEnum statusEnum = null;
+        UUID mechanicId = null;
 
-        if(status != null && !status.isBlank()) {
+        // Validação de status
+        if (status != null && !status.isBlank()) {
             try {
                 statusEnum = StatusEnum.valueOf(status.toUpperCase());
             } catch (IllegalArgumentException | NullPointerException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Status inválido");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido");
             }
-
         }
-        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatus(statusEnum);
+
+        // Validação de mechanicId
+        if (mechanicIdStr != null && !mechanicIdStr.isBlank()) {
+            try {
+                mechanicId = UUID.fromString(mechanicIdStr);
+            } catch (IllegalArgumentException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mechanicId inválido");
+            }
+        }
+
+        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndMechanicId(statusEnum, mechanicId);
         Page<ServicesEntity> servicePage = servicesRepository.findAll(spec, pageable);
 
         return servicePage.map(servicesMapper::toDto);
-    }   
+    }
 
     public ServicesResponseDto getService(String id) {
         return servicesMapper.toDto(findServicesOrThrow(id));
