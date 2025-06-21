@@ -110,10 +110,6 @@ export function Login() {
                         isLoading={isLogging}
                         onPress={handleLogin}
                     />
-
-                    <TouchableOpacity style={styles.forgotPasswordButton}>
-                        <Text style={styles.forgotPasswordText}>Esqueceu sua senha?</Text>
-                    </TouchableOpacity>
                 </ScrollView>
             </KeyboardAvoidingView>
         </Container>
