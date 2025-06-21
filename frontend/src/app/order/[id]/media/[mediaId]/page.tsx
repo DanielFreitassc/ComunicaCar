@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Download, Share2, ImageIcon, AlertCircle } from "lucide-react"
 import Image from "next/image"
+import { getImageUrl } from "@/services/minio"
 
 export default function MediaDetailPage() {
   const params = useParams()
@@ -14,11 +15,12 @@ export default function MediaDetailPage() {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
-  const imageUrl = `http://localhost:9000/images/${mediaId}`
+  const imageUrl = getImageUrl(mediaId)
 
   const handleDownload = async () => {
     try {
       const response = await fetch(imageUrl)
+      if (!response.ok) throw new Error("Erro ao baixar imagem")
       const blob = await response.blob()
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
@@ -45,10 +47,15 @@ export default function MediaDetailPage() {
         console.error("Erro ao compartilhar:", error)
       }
     } else {
-      navigator.clipboard.writeText(window.location.href)
+      await navigator.clipboard.writeText(window.location.href)
       alert("Link copiado para a área de transferência!")
     }
   }
+
+  useEffect(() => {
+    setImageLoaded(false)
+    setImageError(false)
+  }, [mediaId])
 
   if (imageError) {
     return (
@@ -74,11 +81,6 @@ export default function MediaDetailPage() {
     )
   }
 
-  useEffect(() => {
-    setImageLoaded(false)
-    setImageError(false)
-  }, [mediaId])
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -89,12 +91,35 @@ export default function MediaDetailPage() {
           </Button>
 
           <div className="flex items-center gap-3">
-            <Button onClick={handleDownload} className="bg-primary hover:bg-primary/90 text-white">
+            <Button
+              onClick={handleDownload}
+              className="
+                bg-primary
+                text-white
+                hover:bg-primary/90
+                hover:scale-105
+                transform
+                transition-all
+                duration-200
+              "
+            >
               <Download className="h-4 w-4 mr-2" />
               Baixar
             </Button>
 
-            <Button variant="outline" onClick={handleShare} className="border-gray-300 hover:bg-gray-100">
+            <Button
+              onClick={handleShare}
+              className="
+                bg-slate-900
+                text-white
+                border-slate-700
+                hover:bg-slate-800
+                hover:scale-105
+                transform
+                transition-all
+                duration-200
+              "
+            >
               <Share2 className="h-4 w-4 mr-2" />
               Compartilhar
             </Button>

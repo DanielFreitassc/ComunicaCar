@@ -1,9 +1,11 @@
 "use client"
 import { use } from "react"
 import { useEffect, useState } from "react"
-import axios from "axios"
+import { getServiceById } from "@/services/backend";
+import { getImageUrl } from "@/services/minio"
+
 import Image from "next/image"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -17,8 +19,19 @@ import {
   AlertCircle,
   ImageIcon,
   Hash,
+  Wrench,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
 import Link from "next/link"
+
+interface Step {
+  id: string
+  title: string
+  description: string
+  createdAt: string
+  imageIds: string[]
+}
 
 interface Service {
   id: string
@@ -28,7 +41,7 @@ interface Service {
   description: string
   conclusionDate: string
   status: string
-  mediaIds: string[]
+  steps: Step[]
   createdAt: string
 }
 
@@ -63,16 +76,39 @@ export default function ServiceDetails({ params: asyncParams }: Props) {
   const [service, setService] = useState<Service | null>(null)
   const [error, setError] = useState("")
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set())
+  const [expandedSteps, setExpandedSteps] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
-    axios
-      .get<Service>(`http://localhost:8080/services/public/${id}`)
-      .then((res) => setService(res.data))
-      .catch(() => setError("Erro ao buscar dados do serviço"))
-  }, [id])
+  async function fetchService() {
+    try {
+      const data = await getServiceById(id)
+      setService(data)
+
+      const expanded: Record<string, boolean> = {}
+      data.steps.forEach((step: Step) => {
+        expanded[step.id] = true
+      })
+      setExpandedSteps(expanded)
+    } catch {
+      setError("Erro ao buscar dados do serviço")
+    }
+  }
+
+  if (id) {
+    fetchService()
+  }
+}, [id])
+
 
   const handleImageError = (mediaId: string) => {
     setImageErrors((prev) => new Set([...prev, mediaId]))
+  }
+
+  const toggleStep = (stepId: string) => {
+    setExpandedSteps(prev => ({
+      ...prev,
+      [stepId]: !prev[stepId]
+    }))
   }
 
   if (error) {
@@ -113,6 +149,9 @@ export default function ServiceDetails({ params: asyncParams }: Props) {
   const statusConfig = getStatusConfig(service.status)
   const StatusIcon = statusConfig.icon
 
+  // Calcula o total de imagens em todos os steps
+  const totalImages = service.steps.reduce((acc, step) => acc + step.imageIds.length, 0)
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5F5F5" }}>
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -150,44 +189,131 @@ export default function ServiceDetails({ params: asyncParams }: Props) {
               </CardContent>
             </Card>
 
-            {/* Images Card */}
-            {service.mediaIds.length > 0 && (
+            {/* Steps */}
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-[#4C4C4C] flex items-center gap-2">
+                <Wrench className="h-5 w-5" style={{ color: "#CF0F47" }} />
+                Passos do Serviço ({service.steps.length})
+              </h2>
+
+              {service.steps.map((step) => (
+                <Card key={step.id} className="border-0 shadow-lg" style={{ backgroundColor: "#ffffff" }}>
+                  <CardHeader 
+                    className="pb-3 cursor-pointer hover:bg-gray-50 rounded-t-lg" 
+                    onClick={() => toggleStep(step.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-[#4C4C4C]">
+                        <span className="text-[#CF0F47] font-bold">#{service.steps.indexOf(step) + 1}</span>
+                        {step.title}
+                      </CardTitle>
+                      {expandedSteps[step.id] ? (
+                        <ChevronUp className="h-5 w-5 text-[#ACACAC]" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-[#ACACAC]" />
+                      )}
+                    </div>
+                  </CardHeader>
+                  
+                  {expandedSteps[step.id] && (
+                    <>
+                      <CardContent>
+                        <p className="text-[#555555] mb-4">{step.description}</p>
+                        
+                        {step.imageIds && step.imageIds.length > 0 && (
+                          <div className="mt-4">
+                            <h3 className="text-sm font-medium text-[#ACACAC] mb-2 flex items-center gap-1">
+                              <ImageIcon className="h-4 w-4" />
+                              Imagens deste passo ({step.imageIds.length})
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {step.imageIds.map((imageId) => (
+                                <div key={imageId} className="relative group">
+                                  {!imageErrors.has(imageId) ? (
+                                    <Link href={`/order/${id}/media/${imageId}`}>
+                                      <Image
+                                        src={getImageUrl(imageId)}
+                                        alt={`Imagem do passo ${step.title}`}
+                                        width={400}
+                                        height={300}
+                                        className="rounded-lg shadow-md object-cover w-full h-48 transition-transform group-hover:scale-105 cursor-pointer"
+                                        onError={() => handleImageError(imageId)}
+                                        unoptimized={true}
+                                      />
+
+                                    </Link>
+                                  ) : (
+                                    <div
+                                      className="w-full h-48 rounded-lg flex items-center justify-center"
+                                      style={{ backgroundColor: "#EAEAEA" }}
+                                    >
+                                      <div className="text-center text-[#bfbfbf]">
+                                        <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                                        <p className="text-sm">Imagem não disponível</p>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </CardContent>
+                      <CardFooter className="text-xs text-[#ACACAC]">
+                        Criado em: {new Date(step.createdAt).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </CardFooter>
+                    </>
+                  )}
+                </Card>
+              ))}
+            </div>
+
+            {/* All Images Card - Apenas se houver imagens */}
+            {totalImages > 0 && (
               <Card className="border-0 shadow-lg" style={{ backgroundColor: "#ffffff" }}>
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center gap-2 text-[#4C4C4C]">
                     <ImageIcon className="h-5 w-5" style={{ color: "#CF0F47" }} />
-                    Imagens do Serviço ({service.mediaIds.length})
+                    Todas as Imagens do Serviço ({totalImages})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {service.mediaIds.map((mediaId) => (
-                      <div key={mediaId} className="relative group">
-                        {!imageErrors.has(mediaId) ? (
-                          <Link href={`/order/${id}/media/${mediaId}`}>
-                            <Image
-                              src={`http://localhost:9000/images/${mediaId}`}
-                              alt="Imagem do serviço"
-                              width={400}
-                              height={300}
-                              className="rounded-lg shadow-md object-cover w-full h-48 transition-transform group-hover:scale-105 cursor-pointer"
-                              onError={() => handleImageError(mediaId)}
-                               unoptimized={true} 
-                            />
-                          </Link>
-                        ) : (
-                          <div
-                            className="w-full h-48 rounded-lg flex items-center justify-center"
-                            style={{ backgroundColor: "#EAEAEA" }}
-                          >
-                            <div className="text-center text-[#bfbfbf]">
-                              <ImageIcon className="h-8 w-8 mx-auto mb-2" />
-                              <p className="text-sm">Imagem não disponível</p>
+                    {service.steps.flatMap(step => 
+                      step.imageIds?.map(imageId => (
+                        <div key={imageId} className="relative group">
+                          {!imageErrors.has(imageId) ? (
+                            <Link href={`/order/${id}/media/${imageId}`}>
+                              <Image
+                                        src={getImageUrl(imageId)}
+                                        alt={`Imagem do passo ${step.title}`}
+                                        width={400}
+                                        height={300}
+                                        className="rounded-lg shadow-md object-cover w-full h-48 transition-transform group-hover:scale-105 cursor-pointer"
+                                        onError={() => handleImageError(imageId)}
+                                        unoptimized={true}
+                              />
+                            </Link>
+                          ) : (
+                            <div
+                              className="w-full h-48 rounded-lg flex items-center justify-center"
+                              style={{ backgroundColor: "#EAEAEA" }}
+                            >
+                              <div className="text-center text-[#bfbfbf]">
+                                <ImageIcon className="h-8 w-8 mx-auto mb-2" />
+                                <p className="text-sm">Imagem não disponível</p>
+                              </div>
                             </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                          )}
+                        </div>
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -236,14 +362,46 @@ export default function ServiceDetails({ params: asyncParams }: Props) {
                 <div>
                   <p className="text-sm font-medium text-[#ACACAC]">Data de Conclusão</p>
                   <p className="text-[#4C4C4C]">
-                    {service.conclusionDate
-                      ? new Date(service.conclusionDate).toLocaleDateString("pt-BR", {
+                  {service.conclusionDate
+                    ? (() => {
+                        const [day, month, year] = service.conclusionDate.split("/")
+                        const date = new Date(`${year}-${month}-${day}`)
+                        return date.toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
                           year: "numeric",
                         })
-                      : "Não definida"}
-                  </p>
+                      })()
+                    : "Não definida"}
+                </p>
+
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Summary Card */}
+            <Card className="border-0 shadow-lg" style={{ backgroundColor: "#ffffff" }}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-[#4C4C4C]">
+                  <FileText className="h-5 w-5" style={{ color: "#CF0F47" }} />
+                  Resumo
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-[#ACACAC]">Passos:</span>
+                  <span className="font-medium text-[#4C4C4C]">{service.steps.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#ACACAC]">Imagens:</span>
+                  <span className="font-medium text-[#4C4C4C]">{totalImages}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#ACACAC]">Status:</span>
+                  <Badge className={statusConfig.color}>
+                    <StatusIcon className="h-3 w-3 mr-1" />
+                    {statusConfig.label}
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
