@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.danielfreitassc.backend.models.MediaEntity;
 
 public interface MediaRepository extends JpaRepository<MediaEntity,String> {
-    List<MediaEntity> findByServiceId_Id(String serviceId);
+    List<MediaEntity> findByStep_Id(String stepId);
 }

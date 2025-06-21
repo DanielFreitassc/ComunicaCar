@@ -7,17 +7,15 @@ import org.springframework.stereotype.Component;
 import com.danielfreitassc.backend.models.MediaEntity;
 import com.danielfreitassc.backend.repositories.MediaRepository;
 
-@Component
-public class MediaHelper {
+import lombok.RequiredArgsConstructor;
 
+@Component
+@RequiredArgsConstructor
+public class MediaHelper {
     private final MediaRepository mediaRepository;
 
-    public MediaHelper(MediaRepository mediaRepository) {
-        this.mediaRepository = mediaRepository;
-    }
-
-    public List<String> getImageIdsByServiceId(String serviceId) {
-        List<MediaEntity> media = mediaRepository.findByServiceId_Id(serviceId);
+    public List<String> getImageIdsByStepId(String stepId) {
+        List<MediaEntity> media = mediaRepository.findByStep_Id(stepId);
         return media.stream().map(MediaEntity::getImageId).toList();
     }
 }

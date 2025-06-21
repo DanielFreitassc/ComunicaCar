@@ -5,8 +5,8 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.constraints.NotBlank;
 
 public record MediaRequestDto(
-    @NotBlank(message = "Inciar um ordem de serviço é necessário")
-    String serviceId,
+    @NotBlank(message = "Insira a qual passo pertence a foto")
+    String stepId,
     MultipartFile image
 ) {
     

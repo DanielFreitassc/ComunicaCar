@@ -44,13 +44,19 @@ public class SecurityConfigurations {
                 .requestMatchers(HttpMethod.PATCH,"/users/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.DELETE,"/users/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
 
+                
                 .requestMatchers(HttpMethod.POST,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.PUT,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.DELETE,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
-                
                 .requestMatchers(HttpMethod.GET,"/services/public/{id}").permitAll()
+
+                .requestMatchers(HttpMethod.POST,"/steps").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
+                .requestMatchers(HttpMethod.GET,"/steps").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
+                .requestMatchers(HttpMethod.GET,"/steps/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
+                .requestMatchers(HttpMethod.PUT,"/steps/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
+                .requestMatchers(HttpMethod.DELETE,"/steps/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 
                 .requestMatchers(HttpMethod.POST,"/media").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/media").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")

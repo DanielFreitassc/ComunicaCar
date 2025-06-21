@@ -15,9 +15,9 @@ import com.danielfreitassc.backend.dtos.MessageAndIdDto;
 import com.danielfreitassc.backend.dtos.MessageResponseDto;
 import com.danielfreitassc.backend.mappers.MediaMapper;
 import com.danielfreitassc.backend.models.MediaEntity;
-import com.danielfreitassc.backend.models.ServicesEntity;
+import com.danielfreitassc.backend.models.StepEntity;
 import com.danielfreitassc.backend.repositories.MediaRepository;
-import com.danielfreitassc.backend.repositories.ServicesRepository;
+import com.danielfreitassc.backend.repositories.StepRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,12 +25,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MediaService {
     private final MediaRepository mediaRepository;
-    private final ServicesRepository servicesRepository;
+    private final StepRepository stepRepository;
     private final MinioService minioService;
     private final MediaMapper mediaMapper;
 
     public MessageAndIdDto create(MediaRequestDto mediaRequestDto) throws Exception {
-        findServicesOrThrow(mediaRequestDto.serviceId());
+        findStepOrThrow(mediaRequestDto.stepId());
 
         String imageId = UUID.randomUUID().toString();
 
@@ -60,7 +60,7 @@ public class MediaService {
     public MessageResponseDto update(String id, MediaRequestDto mediaRequestDto) throws Exception {
         
         MediaEntity mediaEntity = findMediaOrThrow(id);
-        findServicesOrThrow(mediaRequestDto.serviceId());
+        findStepOrThrow(mediaRequestDto.stepId());
         
         String imageId = UUID.randomUUID().toString();
         minioService.update(mediaEntity.getImageId(), imageId, mediaRequestDto.image());
@@ -79,8 +79,8 @@ public class MediaService {
         return media.get();
     }
 
-    private void findServicesOrThrow(String id) {
-        Optional<ServicesEntity> services = servicesRepository.findById(id);
-        if(services.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Ordem de serviço indicada não encontrada");
+    private void findStepOrThrow(String id) {
+        Optional<StepEntity> services = stepRepository.findById(id);
+        if(services.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Etapa indicada não encontrada!");
     }   
 }

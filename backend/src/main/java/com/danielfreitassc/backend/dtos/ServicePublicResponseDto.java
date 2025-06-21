@@ -20,6 +20,6 @@ public class ServicePublicResponseDto {
     private LocalDate conclusionDate;
 
     private StatusEnum status;
-    private List<String> mediaIds;
+    private List<StepResponseDto> steps;
     private String createdAt;
 }

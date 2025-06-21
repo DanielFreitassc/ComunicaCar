@@ -10,12 +10,12 @@ CREATE TABLE users (
     lockout_expiration TIMESTAMP
 );
 
--- Índice para melhorar performance de busca por username
+-- Índice para busca por username
 CREATE INDEX idx_users_username ON users(username);
 
 -- Tabela 'services'
 CREATE TABLE services (
-    id VARCHAR(36) PRIMARY KEY,
+    id UUID PRIMARY KEY,
     ticket_number VARCHAR(20) UNIQUE,
     title VARCHAR(255) NOT NULL,
     vehicle VARCHAR(100) NOT NULL,
@@ -29,15 +29,30 @@ CREATE TABLE services (
     CONSTRAINT fk_services_mechanic FOREIGN KEY (mechanic_id) REFERENCES users(id)
 );
 
+-- Tabela 'steps'
+CREATE TABLE steps (
+    id UUID PRIMARY KEY,
+    service_id UUID NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_step_service FOREIGN KEY (service_id) REFERENCES services(id)
+);
+
+CREATE INDEX idx_step_service_id ON steps(service_id);
+
 -- Tabela 'media'
 CREATE TABLE media (
-    id VARCHAR(36) PRIMARY KEY,
-    service_id VARCHAR(36) NOT NULL,
+    id UUID PRIMARY KEY,
+    step_id UUID NOT NULL,
     image_id VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT fk_media_service FOREIGN KEY (service_id) REFERENCES services(id)
+    CONSTRAINT fk_media_step FOREIGN KEY (step_id) REFERENCES steps(id)
 );
+
+CREATE INDEX idx_media_step_id ON media(step_id);
 
 -- Tabela de controle de sequência por ano para número de tickets
 CREATE TABLE service_ticket_sequence (

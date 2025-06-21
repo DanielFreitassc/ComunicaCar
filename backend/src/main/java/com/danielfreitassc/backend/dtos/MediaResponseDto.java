@@ -4,7 +4,7 @@ import java.sql.Timestamp;
 
 public record MediaResponseDto(
     String id,
-    String serviceId,
+    String stepId,
     String imageId,
     Timestamp createdAt
 ) {

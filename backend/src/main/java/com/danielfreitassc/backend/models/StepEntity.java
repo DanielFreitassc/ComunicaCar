@@ -16,22 +16,23 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
 @Setter
-@NoArgsConstructor
+@Getter
 @AllArgsConstructor
-@Entity(name = "media")
-@Table(name = "media")
-public class MediaEntity {
+@NoArgsConstructor
+@Table(name = "steps")
+@Entity(name = "steps")
+public class StepEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
+    
     @ManyToOne
-    @JoinColumn(name = "step_id")
-    private StepEntity step;
+    @JoinColumn(name = "service_id")
+    private ServicesEntity service;
 
-    private String imageId;
-
+    private String title;
+    private String description;
     @CreationTimestamp
     private Timestamp createdAt;
 }
