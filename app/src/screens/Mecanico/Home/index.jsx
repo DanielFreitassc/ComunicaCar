@@ -17,12 +17,15 @@ import { useAuth } from '../../../hooks/authHook';
 import { Container } from '../../../components/Container'
 import { Alert } from 'react-native';
 import { api } from '../../../infra/apis/api';
+import { useNavigation } from '@react-navigation/native';
 
 // Calcula largura da tela para dimensionar cards
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_WIDTH = SCREEN_WIDTH * 0.28; // cerca de 28% da largura da tela
 
 export function Home() {
+
+  const navigation = useNavigation();
 
   const { logout } = useAuth();
 
@@ -51,6 +54,17 @@ export function Home() {
     }
   }
 
+  async function selectService(service) {
+    try {
+      navigation.navigate('Mecanico', {
+        screen: 'Service',
+        params: { Service: service },
+      });
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   return (
     <Container>
       <View style={styles.headerContainer}>
@@ -58,7 +72,6 @@ export function Home() {
           <FontAwesome5 name="car-side" size={32} color="#E91E63" />
           <Text style={styles.headerText}>
             Olá,{' '}
-            <Text style={styles.headerTextBold}>Mecânica Boa Roda Ltda.</Text>
           </Text>
         </View>
         <TouchableOpacity style={styles.headerRight} onPress={logout} activeOpacity={0.8}>
@@ -76,72 +89,31 @@ export function Home() {
           </View>
         </View>
 
-        {
-          isLoading ?
-            <ActivityIndicator /> :
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.sectionScroll}
-              data={services}
-              renderItem={({ item: service }) =>
-                <View key={service.id} style={styles.cardContainer}>
-                  <View style={styles.cardInner}>
-                    <FontAwesome5 name="car" size={28} color="#DDDDDD" />
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {service.title}
-                    </Text>
-                    <Text style={styles.cardSubtitle} numberOfLines={1}>
-                      {service.vehicle}
-                    </Text>
-                    <Text style={styles.cardStatus} numberOfLines={1}>
-                      {service.status}
-                    </Text>
-                  </View>
-                </View>
-              }
-              ListEmptyComponent={() => <Text>Não encontramos nenhum serviço ativo!</Text>}
-            />
-        }
+        <FlatList
+          data={services}
+          renderItem={({ item: service }) =>
+            <TouchableOpacity onPress={() => selectService(service)} activeOpacity={0.8}
+              key={service.id}
+              style={styles.cardContainer}>
 
-      </View>
+              <Text style={styles.cardTitle} numberOfLines={1}>
+                {service.title}
+              </Text>
 
-      {/* Seção de Atendimentos */}
-      <View style={styles.sectionContainer}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleLeft}>
-            <MaterialIcons name="build-circle" size={20} color="#555555" />
-            <Text style={styles.sectionTitleText}>Atendimentos finalizados</Text>
-          </View>
-        </View>
-
-        {
-          isLoading ?
-            <ActivityIndicator /> :
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.sectionScroll}
-              data={services}
-              renderItem={({ item: service }) =>
-                <View key={service.id} style={styles.cardContainer}>
-                  <View style={styles.cardInner}>
-                    <FontAwesome5 name="car" size={28} color="#DDDDDD" />
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {service.title}
-                    </Text>
-                    <Text style={styles.cardSubtitle} numberOfLines={1}>
-                      {service.vehicle}
-                    </Text>
-                    <Text style={styles.cardStatus} numberOfLines={1}>
-                      {service.status}
-                    </Text>
-                  </View>
-                </View>
-              }
-              ListEmptyComponent={() => <Text>Não encontramos nenhum serviço ativo!</Text>}
-            />
-        }
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <Text style={styles.cardSubtitle} numberOfLines={1}>
+                  {service.vehicle}
+                </Text>
+                <Text style={styles.cardStatus} numberOfLines={1}>
+                  {service.status}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          }
+          onRefresh={getServices}
+          refreshing={isLoading}
+          ListEmptyComponent={() => <Text>Não encontramos nenhum serviço ativo!</Text>}
+        />
 
       </View>
     </Container>
@@ -225,31 +197,23 @@ const styles = StyleSheet.create({
     color: '#E91E63',
     fontWeight: '500',
   },
-  sectionScroll: {
-    // se quiser um paddingLeft inicial nos cards, descomente:
-    // paddingLeft: 5,
-  },
-
-  /***** CARD (ATENDIMENTOS) *****/
   cardContainer: {
-    width: CARD_WIDTH,
-    height: CARD_WIDTH * 0.8,
+    width: '100%',
     borderRadius: 10,
     backgroundColor: '#F5F5F5',
-    marginRight: 15,
+    marginBottom: 15,
     padding: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
   },
   cardInner: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     color: '#333333',
-    marginTop: 8,
     textAlign: 'center',
   },
   cardSubtitle: {

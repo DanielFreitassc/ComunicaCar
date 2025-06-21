@@ -1,6 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { PublicNavigationRoutes } from "./Public/PublicNavigation.routes"
-import { PrivateNavigationRoutes } from "./Public/PrivateNavigation.routes"
+import { PrivateNavigationRoutes } from "./Private/PrivateNavigation.routes"
 import { useAuth } from '../hooks/authHook';
 import { AuthStore } from '../infra/stores/AuthStore';
 import { useEffect, useState } from 'react';
