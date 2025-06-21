@@ -80,6 +80,7 @@ public class SecurityConfigurations {
         configuration.addAllowedOrigin("http://localhost:19000");
         configuration.addAllowedOrigin("http://localhost:19002");
         configuration.addAllowedOrigin("http://localhost:3000");
+        configuration.addAllowedOrigin("https://comunica-car.vercel.app");
         configuration.addAllowedMethod(HttpMethod.POST);
         configuration.addAllowedMethod(HttpMethod.GET);
         configuration.addAllowedMethod(HttpMethod.PUT);
