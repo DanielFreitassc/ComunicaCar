@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
     const authStore = new AuthStore();
 
     const [token, setToken] = useState(null);
+    const [isAtendente, setIsAtendente] = useState(true);
 
     async function logout() {
         setToken(null)
@@ -14,7 +15,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return (
-        <AuthContext.Provider value={{ token, setToken, logout }}>
+        <AuthContext.Provider value={{ token, setToken, isAtendente, setIsAtendente, logout }}>
             {children}
         </AuthContext.Provider>
     );

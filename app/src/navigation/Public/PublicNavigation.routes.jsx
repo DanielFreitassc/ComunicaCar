@@ -1,5 +1,5 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Welcome } from '../../screens/Comuns/Welcome';
+import { Welcome } from '../../screens/Atendente/Home';
 import { Login } from '../../screens/Comuns/Login';
 
 export function PublicNavigationRoutes() {

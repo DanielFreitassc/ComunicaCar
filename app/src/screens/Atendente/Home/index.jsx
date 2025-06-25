@@ -41,7 +41,7 @@ const dummyData = [
   },
 ];
 
-export default function Home() {
+export function Home() {
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
   const [selectedEtapa, setSelectedEtapa] = useState(dummyData[0].etapa);

@@ -20,7 +20,7 @@ import { AuthStore } from '../../../infra/stores/AuthStore';
 import { Container } from "../../../components/Container";
 
 export function Login() {
-    const { setToken } = useAuth();
+    const { setToken, setIsAtendente } = useAuth();
 
     const [isLogging, setIsLogging] = useState(false);
 
@@ -41,6 +41,7 @@ export function Login() {
             const response = await api.post('/auth/login', { username, password });
             await authStore.set(response.data.token);
             setToken(response.data.token);
+            setIsAtendente(true); // adicionar validação
         } catch (error) {
             Alert.alert('Erro', 'Email ou senha inválidos');
         } finally {
