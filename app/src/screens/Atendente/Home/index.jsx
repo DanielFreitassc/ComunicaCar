@@ -1,5 +1,3 @@
-// ComunicaCar/app/src/screens/Atendente/Home/index.jsx
-
 import React, { useState } from 'react';
 import {
   SafeAreaView,
@@ -11,6 +9,7 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  Share
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
@@ -45,7 +44,19 @@ export function Home() {
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
   const [selectedEtapa, setSelectedEtapa] = useState(dummyData[0].etapa);
-
+  async function handleShare(item) {
+   try {
+     const message = 
+       `Atendimento de ${item.name}\n` +
+       `Veículo: ${item.vehicle}\n` +
+       `Descrição: ${item.description}\n` +
+       `Previsão: ${item.date}\n` +
+       `Etapa: ${item.etapa}`;
+     await Share.share({ message });
+   } catch (err) {
+     console.warn('Erro ao compartilhar:', err);
+   }
+ }
   return (
     <Container>
     <SafeAreaView style={styles.container}>
@@ -136,6 +147,7 @@ export function Home() {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.actionButton, { marginLeft: 10 }]}
+              onPress={() => handleShare(item)}
               >
                 <Text style={styles.actionText}>Compartilhar</Text>
               </TouchableOpacity>
