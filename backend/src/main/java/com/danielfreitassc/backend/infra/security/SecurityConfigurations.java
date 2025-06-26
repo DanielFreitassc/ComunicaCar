@@ -47,6 +47,7 @@ public class SecurityConfigurations {
                 
                 .requestMatchers(HttpMethod.POST,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
+                .requestMatchers(HttpMethod.GET,"/services/info").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.PUT,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.DELETE,"/services/{id}").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")
                 .requestMatchers(HttpMethod.GET,"/services").hasAnyRole("ADMIN","EMPLOYEE_SECRETARY","EMPLOYEE_MECHANIC")

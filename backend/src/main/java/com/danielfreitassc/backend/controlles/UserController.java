@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,9 +18,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.danielfreitassc.backend.configurations.OnCreate;
+import com.danielfreitassc.backend.dtos.InfoResponseDto;
 import com.danielfreitassc.backend.dtos.MessageResponseDto;
 import com.danielfreitassc.backend.dtos.UserRequestDto;
 import com.danielfreitassc.backend.dtos.UserResponseDto;
+import com.danielfreitassc.backend.models.UserEntity;
 import com.danielfreitassc.backend.services.UserService;
 
 import jakarta.validation.Valid;
@@ -45,6 +48,12 @@ public class UserController {
     @GetMapping("/{id}")
     public UserResponseDto getUserById(@PathVariable UUID id) {
         return userService.getById(id);
+    }
+
+    @GetMapping("/info")
+    public InfoResponseDto userInfo(@AuthenticationPrincipal UserEntity userEntity) {
+       String name = userEntity.getName();
+       return new InfoResponseDto(name);
     }
 
     @PatchMapping("/{id}")
