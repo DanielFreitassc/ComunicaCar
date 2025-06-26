@@ -62,7 +62,7 @@ public class ServicesController {
     }
 
     @DeleteMapping("/{id}")
-    public MessageResponseDto delete(@PathVariable String id) {
+    public MessageResponseDto delete(@PathVariable String id) throws Exception {
         return servicesService.delete(id);
     }
 }

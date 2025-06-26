@@ -1,5 +1,6 @@
 package com.danielfreitassc.backend.services;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -11,8 +12,10 @@ import org.springframework.web.server.ResponseStatusException;
 import com.danielfreitassc.backend.dtos.StepRequestDto;
 import com.danielfreitassc.backend.dtos.StepResponseDto;
 import com.danielfreitassc.backend.mappers.StepMapper;
+import com.danielfreitassc.backend.models.MediaEntity;
 import com.danielfreitassc.backend.models.ServicesEntity;
 import com.danielfreitassc.backend.models.StepEntity;
+import com.danielfreitassc.backend.repositories.MediaRepository;
 import com.danielfreitassc.backend.repositories.ServicesRepository;
 import com.danielfreitassc.backend.repositories.StepRepository;
 
@@ -23,6 +26,8 @@ import lombok.RequiredArgsConstructor;
 public class StepService {
     private final StepRepository stepRepository;
     private final ServicesRepository servicesRepository;
+    private final MediaRepository mediaRepository;
+    private final MediaService mediaService;
     private final StepMapper stepMapper;
 
     public StepResponseDto create(StepRequestDto stepRequestDto) {
@@ -47,8 +52,15 @@ public class StepService {
         return stepMapper.toDto(stepRepository.save(stepEntity));
     }
 
-    public StepResponseDto delete(String id) {
+    public StepResponseDto delete(String id) throws Exception {
         StepEntity stepEntity = findStepOrThrow(id);
+
+        List<MediaEntity> medias = mediaRepository.findByStep_Id(id);
+
+        for(MediaEntity mediaEntity : medias) {
+            mediaService.remove(mediaEntity.getId());
+        }
+
         stepRepository.delete(stepEntity);
         return stepMapper.toDto(stepEntity);
     }

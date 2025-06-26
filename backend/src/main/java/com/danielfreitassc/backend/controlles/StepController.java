@@ -49,7 +49,7 @@ public class StepController {
     }
 
     @DeleteMapping("/{id}")
-    public StepResponseDto delete(@PathVariable String id) {
+    public StepResponseDto delete(@PathVariable String id) throws Exception {
         return stepService.delete(id);
     }
 }

@@ -1,6 +1,7 @@
 package com.danielfreitassc.backend.services;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -20,9 +21,11 @@ import com.danielfreitassc.backend.mappers.ServicesMapper;
 import com.danielfreitassc.backend.models.ServiceTicketSequenceEntity;
 import com.danielfreitassc.backend.models.ServicesEntity;
 import com.danielfreitassc.backend.models.StatusEnum;
+import com.danielfreitassc.backend.models.StepEntity;
 import com.danielfreitassc.backend.models.UserEntity;
 import com.danielfreitassc.backend.repositories.ServiceTicketSequenceRepository;
 import com.danielfreitassc.backend.repositories.ServicesRepository;
+import com.danielfreitassc.backend.repositories.StepRepository;
 import com.danielfreitassc.backend.repositories.UserRepository;
 
 import jakarta.transaction.Transactional;
@@ -35,6 +38,8 @@ public class ServicesService {
     private final ServiceTicketSequenceRepository serviceTicketSequenceRepository;
     private final ServicesMapper servicesMapper;
     private final UserRepository userRepository;
+    private final StepRepository stepRepository;
+    private final StepService stepService;
 
     public MessageAndIdDto create(ServicesRequestDto servicesRequestDto) {
         findMechanicOrThrow(servicesRequestDto.mechanicId());
@@ -84,10 +89,19 @@ public class ServicesService {
         return servicesMapper.toPulic(findServicesOrThrow(id));
     }
 
-    public MessageResponseDto delete(String id) {
+    @Transactional
+    public MessageResponseDto delete(String id) throws Exception {
         ServicesEntity servicesEntity = findServicesOrThrow(id);
+
+        List<StepEntity> stepsToDelete = stepRepository.findByService_Id(id);
+
+        for (StepEntity step : stepsToDelete) {
+            stepService.delete(step.getId());
+        }
+
         servicesRepository.delete(servicesEntity);
-        return new MessageResponseDto("Ordem de serviço removida com sucesso");
+
+        return new MessageResponseDto("Ordem de serviço e todos os dados associados foram removidos com sucesso");
     }
 
     public MessageResponseDto update(String id, ServicesRequestDto servicesRequestDto) {
