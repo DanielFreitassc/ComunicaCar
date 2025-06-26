@@ -7,7 +7,7 @@ export const AuthProvider = ({ children }) => {
     const authStore = new AuthStore();
 
     const [token, setToken] = useState(null);
-    const [isAtendente, setIsAtendente] = useState(true);
+    const [isAtendente, setIsAtendente] = useState(false);
 
     async function logout() {
         setToken(null)

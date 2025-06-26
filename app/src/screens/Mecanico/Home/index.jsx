@@ -18,6 +18,7 @@ import { Container } from '../../../components/Container'
 import { Alert } from 'react-native';
 import { api } from '../../../infra/apis/api';
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 
 // Calcula largura da tela para dimensionar cards
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -45,7 +46,6 @@ export function Home() {
           limit: 9999
         }
       });
-
       setServices(data.content)
     } catch (error) {
       Alert.alert("Atenção", "Ocorreu um erro ao recuperar os atendimento em andamento!", "Ok");
@@ -65,6 +65,7 @@ export function Home() {
     }
   }
 
+ 
   return (
     <Container>
       <View style={styles.headerContainer}>

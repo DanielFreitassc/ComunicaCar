@@ -7,51 +7,103 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  Image
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Container } from '../../../components/Container';
 import { FontAwesome5, Feather } from '@expo/vector-icons';
+import { api } from '../../../infra/apis/api';
+import * as ImagePicker from 'expo-image-picker';
 
 export function Service() {
   const route = useRoute();
   const navigation = useNavigation();
 
   const [service, setService] = useState(null);
-  const [etapas, setEtapas] = useState([
-    { titulo: '', desc: '', dataCad: new Date().toISOString() }
-  ]);
-  const [editandoIndex, setEditandoIndex] = useState(null); // null exceto quando editando etapa antiga
+  const [imagemSelecionada, setImagemSelecionada] = useState(null);
+  const [etapas, setEtapas] = useState([]);
+
+  const [editandoIndex, setEditandoIndex] = useState(null);
 
   useEffect(() => {
     if (route.params?.Service) {
-      setService(route.params.Service);
+      setService(route.params?.Service);
     }
   }, [route.params]);
 
-  function handleSave() {
-    const index = editandoIndex !== null ? editandoIndex : etapas.length - 1;
-    const etapa = etapas[index];
+  useEffect(() => {
+    if (service?.id && service.steps) {
+      const etapasComImagens = service.steps.map((step) => ({
+        ...step,
+      }));
 
-    if (!etapa.titulo.trim() || !etapa.desc.trim()) return;
+      setEtapas([
+        ...etapasComImagens,
+        {
+          title: '',
+          description: '',
+          serviceId: service.id,
+          createdAt: new Date(),
+        },
+      ]);
+    }
+  }, [service]);
 
-    const novaEtapas = [...etapas];
-    novaEtapas[index].dataCad = new Date().toISOString();
 
-    // Se estiver editando uma etapa antiga
-    if (editandoIndex !== null && editandoIndex !== etapas.length - 1) {
-      setEtapas(novaEtapas);
-      setEditandoIndex(null);
-      return;
+  async function handleSave() {
+    try {
+
+      const index = editandoIndex !== null ? editandoIndex : etapas.length - 1;
+      const etapa = etapas[index];
+
+      if (!etapa.title.trim() || !etapa.description.trim()) return;
+
+      if (editandoIndex !== null && editandoIndex !== etapas.length - 1) {
+        return await editarEtapa(etapa);
+      }
+
+      return await salvarNovaEtapa(etapa);
+    } catch (error) {
+      Alert.alert("Atenção!", `Ocorreu um erro ao salvar etapa! ${error}`);
+    }
+  }
+
+  async function salvarNovaEtapa(etapa) {
+    const dto = {
+      title: etapa.title,
+      description: etapa.description,
+      serviceId: service.id
     }
 
-    // Se for nova etapa
+    const { data } = await api.post("/steps", dto);
+
+    const novaEtapas = [...etapas];
+    novaEtapas[etapas.length - 1] = data;
+
     novaEtapas.push({
-      titulo: '',
-      desc: '',
-      dataCad: new Date().toISOString(),
+      serviceId: service.id,
+      title: '',
+      description: '',
+      createdAt: new Date(),
     });
 
     setEtapas(novaEtapas);
+    setEditandoIndex(null);
+  }
+
+  async function editarEtapa(etapa) {
+    const dto = {
+      title: etapa.title,
+      description: etapa.description,
+      serviceId: service.id
+    };
+
+    const { data } = await api.put(`/steps/${etapa.id}`, dto);
+
+    const novasEtapas = [...etapas];
+    novasEtapas[editandoIndex] = data;
+
+    setEtapas(novasEtapas);
     setEditandoIndex(null);
   }
 
@@ -61,22 +113,141 @@ export function Service() {
       {
         text: 'Remover',
         style: 'destructive',
-        onPress: () => {
-          const novaEtapas = etapas.filter((_, i) => i !== index);
-          setEtapas(novaEtapas);
-          if (editandoIndex === index) {
-            setEditandoIndex(null);
+        onPress: async () => {
+          try {
+            const etapa = etapas[index]
+            await deletarEtapa(etapa)
+          } catch (error) {
+            Alert.alert("Atenção!", `Ocorreu um erro ao remover etapa! ${error?.message}`);
           }
         }
       }
     ]);
   }
 
+  async function deletarEtapa(etapa) {
+    await api.delete(`/steps/${etapa.id}`);
+
+    const novasEtapas = etapas.filter(e => e.id !== etapa.id);
+
+    // Garante que ainda haja um campo em branco para nova etapa
+    const ultimaEtapa = novasEtapas[novasEtapas.length - 1];
+    if (!ultimaEtapa || ultimaEtapa.title || ultimaEtapa.description) {
+      novasEtapas.push({
+        serviceId: service.id,
+        title: '',
+        description: '',
+        createdAt: new Date(),
+      });
+    }
+
+    setEtapas(novasEtapas);
+    setEditandoIndex(null);
+  }
+
   function handleEdit(index) {
     setEditandoIndex(index);
   }
 
-  if (!service) return <Text>Serviço não encontrado</Text>;
+  async function handleImagemEtapa(index) {
+    const etapa = etapas[index];
+
+    if (etapa?.mediaId && etapa?.image) {
+      Alert.alert(
+        "Imagem existente",
+        "Esta etapa já possui uma imagem. O que deseja fazer?",
+        [
+          {
+            text: "Visualizar",
+            onPress: () => visualizarImagem(etapa),
+          },
+          {
+            text: "Modificar",
+            onPress: () => modificarImagem(index),
+            style: "destructive",
+          },
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+        ]
+      );
+    } else {
+      await enviarNovaImagem(index);
+    }
+  }
+
+  function visualizarImagem(etapa) {
+    setImagemSelecionada(etapa?.image);
+  }
+
+  async function modificarImagem(index) {
+    const etapa = etapas[index];
+
+    try {
+      await api.delete(`/media/${etapa.mediaId}`);
+      const novasEtapas = [...etapas];
+      novasEtapas[index].mediaId = null;
+      novasEtapas[index].image = null;
+      setEtapas(novasEtapas);
+      await enviarNovaImagem(index);
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Erro", "Erro ao remover imagem antiga.");
+    }
+  }
+
+  async function enviarNovaImagem(index) {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permissão negada', 'Você precisa permitir o acesso à câmera.');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 1,
+      });
+
+      if (result.canceled) return;
+
+      const novasEtapas = [...etapas];
+      const etapa = novasEtapas[index];
+      const imageUri = result.assets[0].uri
+
+      const uriParts = imageUri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+
+      const formData = new FormData();
+      formData.append('stepId', etapa.id);
+      formData.append('image', {
+        uri: imageUri,
+        name: `etapa-${etapa.id}.${fileType}`,
+        type: `image/${fileType}`,
+      });
+
+      const { data } = await api.post('/media', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      etapa.image = result.assets[0].uri;
+      etapa.mediaId = data?.id;
+
+      novasEtapas[index] = etapa;
+      setEtapas(novasEtapas);
+
+      Alert.alert('Sucesso', 'Imagem enviada com sucesso!');
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Erro ao enviar imagem.');
+    }
+  }
+
+  if (!service) return <Container><Text>Serviço não encontrado</Text></Container>;
 
   return (
     <Container>
@@ -86,6 +257,20 @@ export function Service() {
         </TouchableOpacity>
         <Text style={styles.title}>{service.title}</Text>
       </View>
+
+      {imagemSelecionada && (
+        <View style={{ margin: 16, alignItems: 'center' }}>
+          <Text style={{ marginBottom: 8 }}>Visualização da imagem:</Text>
+          <Image
+            source={{ uri: imagemSelecionada }}
+            style={{ width: '100%', height: 300, borderRadius: 8 }}
+            resizeMode="contain"
+          />
+          <TouchableOpacity onPress={() => setImagemSelecionada(null)} style={{ marginTop: 10 }}>
+            <Text style={{ color: '#007AFF' }}>Fechar visualização</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.card}>
@@ -109,13 +294,19 @@ export function Service() {
                 {!isUltima && (
                   <View style={styles.icons}>
                     <TouchableOpacity onPress={() => handleEdit(index)}>
-                      <Feather name="edit" size={20} color="#555" />
+                      <Feather name="edit" size={24} color="#555" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => handleImagemEtapa(index)}
+                      style={{ marginLeft: 12 }}
+                    >
+                      <Feather name="camera" size={24} color="#007AFF" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => handleDelete(index)}
                       style={{ marginLeft: 12 }}
                     >
-                      <Feather name="trash" size={20} color="#E91E63" />
+                      <Feather name="trash" size={24} color="#E91E63" />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -124,10 +315,10 @@ export function Service() {
               <TextInput
                 style={[styles.input, !isEditing && styles.disabledInput]}
                 placeholder="Título da etapa"
-                value={etapa.titulo}
+                value={etapa.title}
                 onChangeText={(text) => {
                   const novasEtapas = [...etapas];
-                  novasEtapas[index].titulo = text;
+                  novasEtapas[index].title = text;
                   setEtapas(novasEtapas);
                 }}
                 editable={isEditing}
@@ -140,10 +331,10 @@ export function Service() {
                 ]}
                 placeholder="Descrição da etapa"
                 multiline
-                value={etapa.desc}
+                value={etapa.description}
                 onChangeText={(text) => {
                   const novasEtapas = [...etapas];
-                  novasEtapas[index].desc = text;
+                  novasEtapas[index].description = text;
                   setEtapas(novasEtapas);
                 }}
                 editable={isEditing}

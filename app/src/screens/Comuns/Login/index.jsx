@@ -41,7 +41,7 @@ export function Login() {
             const response = await api.post('/auth/login', { username, password });
             await authStore.set(response.data.token);
             setToken(response.data.token);
-            setIsAtendente(true); // adicionar validação
+            setIsAtendente(false);
         } catch (error) {
             Alert.alert('Erro', 'Email ou senha inválidos');
         } finally {
