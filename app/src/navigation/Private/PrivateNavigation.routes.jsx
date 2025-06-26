@@ -8,7 +8,7 @@ export function PrivateNavigationRoutes() {
     const Stack = createNativeStackNavigator();
 
     return (
-        <Stack.Navigator initialRouteName={isAtendente ? "Atendente" : "Mecanico"}
+        <Stack.Navigator initialRouteName="Mecanico"
             screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Mecanico" component={MecanicoNavigationRoutes} />
             <Stack.Screen name="Atendente" component={AtendenteNavigationRoutes} />
