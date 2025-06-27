@@ -23,6 +23,7 @@ import com.danielfreitassc.backend.dtos.MessageResponseDto;
 import com.danielfreitassc.backend.dtos.UserRequestDto;
 import com.danielfreitassc.backend.dtos.UserResponseDto;
 import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.models.UserRole;
 import com.danielfreitassc.backend.services.UserService;
 
 import jakarta.validation.Valid;
@@ -53,7 +54,8 @@ public class UserController {
     @GetMapping("/info")
     public InfoResponseDto userInfo(@AuthenticationPrincipal UserEntity userEntity) {
        String name = userEntity.getName();
-       return new InfoResponseDto(name);
+       UserRole role = userEntity.getRole();
+       return new InfoResponseDto(name,role);
     }
 
     @PatchMapping("/{id}")
