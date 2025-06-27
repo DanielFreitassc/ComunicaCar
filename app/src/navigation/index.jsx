@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator } from 'react-native';
 
 export function RootNavigationContainer() {
-    const { setToken, token } = useAuth();
+    const { setToken, token,  setIsAtendente } = useAuth();
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -18,8 +18,9 @@ export function RootNavigationContainer() {
         setIsLoading(true);
         try {
             const authStore = new AuthStore();
-            const token = await authStore.get();
-            setToken(token);
+            const auth = await authStore.get();
+            setIsAtendente(auth.isAtendente)
+            setToken(auth.token);
         } catch (error) {
             setToken(null);
         } finally {

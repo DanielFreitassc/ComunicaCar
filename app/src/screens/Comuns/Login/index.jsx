@@ -25,7 +25,7 @@ export function Login() {
     const [isLogging, setIsLogging] = useState(false);
 
     const [passwordVisible, setPasswordVisible] = useState(false);
-    const [username, setEmail] = useState('admin');
+    const [username, setEmail] = useState('fulano');
     const [password, setPassword] = useState('admin');
 
     const authStore = new AuthStore();
@@ -39,9 +39,11 @@ export function Login() {
             }
 
             const response = await api.post('/auth/login', { username, password });
-            await authStore.set(response.data.token);
+            console.log(response.data)
             setToken(response.data.token);
-            setIsAtendente(false);
+            setIsAtendente(response.data.role != "EMPLOYEE_MECHANIC");
+            await authStore.set(response.data);
+
         } catch (error) {
             Alert.alert('Erro', 'Email ou senha inválidos');
         } finally {

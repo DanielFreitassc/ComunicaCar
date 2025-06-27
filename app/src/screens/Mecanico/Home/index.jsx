@@ -65,7 +65,6 @@ export function Home() {
     }
   }
 
- 
   return (
     <Container>
       <View style={styles.headerContainer}>

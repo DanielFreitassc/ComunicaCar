@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Image
+  Image,
 } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { Container } from '../../../components/Container';
@@ -22,7 +22,6 @@ export function Service() {
   const [service, setService] = useState(null);
   const [imagemSelecionada, setImagemSelecionada] = useState(null);
   const [etapas, setEtapas] = useState([]);
-
   const [editandoIndex, setEditandoIndex] = useState(null);
 
   useEffect(() => {
@@ -33,10 +32,7 @@ export function Service() {
 
   useEffect(() => {
     if (service?.id && service.steps) {
-      const etapasComImagens = service.steps.map((step) => ({
-        ...step,
-      }));
-
+      const etapasComImagens = service.steps.map((step) => ({ ...step }));
       setEtapas([
         ...etapasComImagens,
         {
@@ -49,19 +45,14 @@ export function Service() {
     }
   }, [service]);
 
-
   async function handleSave() {
     try {
-
       const index = editandoIndex !== null ? editandoIndex : etapas.length - 1;
       const etapa = etapas[index];
-
       if (!etapa.title.trim() || !etapa.description.trim()) return;
-
       if (editandoIndex !== null && editandoIndex !== etapas.length - 1) {
         return await editarEtapa(etapa);
       }
-
       return await salvarNovaEtapa(etapa);
     } catch (error) {
       Alert.alert("Atenção!", `Ocorreu um erro ao salvar etapa! ${error}`);
@@ -72,21 +63,17 @@ export function Service() {
     const dto = {
       title: etapa.title,
       description: etapa.description,
-      serviceId: service.id
-    }
-
+      serviceId: service.id,
+    };
     const { data } = await api.post("/steps", dto);
-
     const novaEtapas = [...etapas];
     novaEtapas[etapas.length - 1] = data;
-
     novaEtapas.push({
       serviceId: service.id,
       title: '',
       description: '',
       createdAt: new Date(),
     });
-
     setEtapas(novaEtapas);
     setEditandoIndex(null);
   }
@@ -95,14 +82,11 @@ export function Service() {
     const dto = {
       title: etapa.title,
       description: etapa.description,
-      serviceId: service.id
+      serviceId: service.id,
     };
-
     const { data } = await api.put(`/steps/${etapa.id}`, dto);
-
     const novasEtapas = [...etapas];
     novasEtapas[editandoIndex] = data;
-
     setEtapas(novasEtapas);
     setEditandoIndex(null);
   }
@@ -115,22 +99,19 @@ export function Service() {
         style: 'destructive',
         onPress: async () => {
           try {
-            const etapa = etapas[index]
-            await deletarEtapa(etapa)
+            const etapa = etapas[index];
+            await deletarEtapa(etapa);
           } catch (error) {
             Alert.alert("Atenção!", `Ocorreu um erro ao remover etapa! ${error?.message}`);
           }
-        }
-      }
+        },
+      },
     ]);
   }
 
   async function deletarEtapa(etapa) {
     await api.delete(`/steps/${etapa.id}`);
-
     const novasEtapas = etapas.filter(e => e.id !== etapa.id);
-
-    // Garante que ainda haja um campo em branco para nova etapa
     const ultimaEtapa = novasEtapas[novasEtapas.length - 1];
     if (!ultimaEtapa || ultimaEtapa.title || ultimaEtapa.description) {
       novasEtapas.push({
@@ -140,7 +121,6 @@ export function Service() {
         createdAt: new Date(),
       });
     }
-
     setEtapas(novasEtapas);
     setEditandoIndex(null);
   }
@@ -151,49 +131,14 @@ export function Service() {
 
   async function handleImagemEtapa(index) {
     const etapa = etapas[index];
-
-    if (etapa?.mediaId && etapa?.image) {
-      Alert.alert(
-        "Imagem existente",
-        "Esta etapa já possui uma imagem. O que deseja fazer?",
-        [
-          {
-            text: "Visualizar",
-            onPress: () => visualizarImagem(etapa),
-          },
-          {
-            text: "Modificar",
-            onPress: () => modificarImagem(index),
-            style: "destructive",
-          },
-          {
-            text: "Cancelar",
-            style: "cancel",
-          },
-        ]
-      );
+    if (etapa?.imageIds?.length > 0) {
+      navigation.navigate('Images', {
+        imageIds: etapa?.imageIds,
+        initialImageId: etapa.mediaId,
+        stepId: etapa.id,
+      });
     } else {
       await enviarNovaImagem(index);
-    }
-  }
-
-  function visualizarImagem(etapa) {
-    setImagemSelecionada(etapa?.image);
-  }
-
-  async function modificarImagem(index) {
-    const etapa = etapas[index];
-
-    try {
-      await api.delete(`/media/${etapa.mediaId}`);
-      const novasEtapas = [...etapas];
-      novasEtapas[index].mediaId = null;
-      novasEtapas[index].image = null;
-      setEtapas(novasEtapas);
-      await enviarNovaImagem(index);
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Erro", "Erro ao remover imagem antiga.");
     }
   }
 
@@ -204,19 +149,16 @@ export function Service() {
         Alert.alert('Permissão negada', 'Você precisa permitir o acesso à câmera.');
         return;
       }
-
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         quality: 1,
       });
-
       if (result.canceled) return;
 
       const novasEtapas = [...etapas];
       const etapa = novasEtapas[index];
-      const imageUri = result.assets[0].uri
-
+      const imageUri = result.assets[0].uri;
       const uriParts = imageUri.split('.');
       const fileType = uriParts[uriParts.length - 1];
 
@@ -234,9 +176,7 @@ export function Service() {
         },
       });
 
-      etapa.image = result.assets[0].uri;
-      etapa.mediaId = data?.id;
-
+      etapa.imageIds = [...(etapa?.imageIds || []), data?.id];
       novasEtapas[index] = etapa;
       setEtapas(novasEtapas);
 
@@ -244,6 +184,21 @@ export function Service() {
     } catch (error) {
       console.error(error);
       Alert.alert('Erro', 'Erro ao enviar imagem.');
+    }
+  }
+
+  async function handleFinalizarServico() {
+    try {
+      if (!service?.id) {
+        Alert.alert('Erro', 'ID do serviço não encontrado.');
+        return;
+      }
+      await api.post(`/service/finish/${service.id}`);
+      Alert.alert('Sucesso', 'Serviço finalizado com sucesso!');
+      navigation.goBack();
+    } catch (error) {
+      console.error(error);
+      Alert.alert('Erro', 'Não foi possível finalizar o serviço.');
     }
   }
 
@@ -324,11 +279,7 @@ export function Service() {
                 editable={isEditing}
               />
               <TextInput
-                style={[
-                  styles.input,
-                  { height: 80 },
-                  !isEditing && styles.disabledInput,
-                ]}
+                style={[styles.input, { height: 80 }, !isEditing && styles.disabledInput]}
                 placeholder="Descrição da etapa"
                 multiline
                 value={etapa.description}
@@ -350,6 +301,13 @@ export function Service() {
             ? `Editar etapa ${editandoIndex + 1}`
             : 'Salvar etapa'}
         </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.button, styles.finalizarButton]}
+        onPress={handleFinalizarServico}
+      >
+        <Text style={styles.buttonText}>Finalizar serviço</Text>
       </TouchableOpacity>
     </Container>
   );
@@ -409,8 +367,12 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 12,
-    marginBottom: 32,
+    marginBottom: 12,
     marginHorizontal: 16,
+  },
+  finalizarButton: {
+    backgroundColor: '#007AFF',
+    marginBottom: 32,
   },
   buttonText: {
     color: '#FFF',

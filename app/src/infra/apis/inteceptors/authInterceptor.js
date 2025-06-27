@@ -5,10 +5,10 @@ import { AuthStore } from "../../stores/AuthStore";
 export async function authInterceptor(config) {
     try {
         const authStore = new AuthStore();
-        const token = await authStore.get();
+        const auth = await authStore.get();
 
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        if (auth) {
+            config.headers.Authorization = `Bearer ${auth.token}`;
         }
 
         return config;

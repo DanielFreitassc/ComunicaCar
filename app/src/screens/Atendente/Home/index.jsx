@@ -1,6 +1,4 @@
-// ComunicaCar/app/src/screens/Atendente/Home/index.jsx
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -11,139 +9,170 @@ import {
   StyleSheet,
   Dimensions,
   Platform,
+  FlatList,
+  Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import { Container } from '../../../components/Container'
+import { Container } from '../../../components/Container';
+import { api } from '../../../infra/apis/api';
+import { useAuth } from '../../../hooks/authHook';
+
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CARD_MARGIN = 20;
 const CARD_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
 
-const dummyData = [
-  {
-    id: '1',
-    name: 'Carlos Souza',
-    vehicle: 'Renault Kwid Zen 1.0',
-    description:
-      'Cliente relatou ruído ao frear; identificado desgaste nas pastilhas e desalinahmento.',
-    date: '20/05/2025',
-    etapa: 'Em andamento',
-  },
-  {
-    id: '2',
-    name: 'Lucas Almeida',
-    vehicle: 'Volkswagen Fox 1.6',
-    description:
-      'Cliente trouxe o carro com barulho no câmbio; trocar óleo e calibrar marchas.',
-    date: '22/05/2025',
-    etapa: 'Pendente',
-  },
-];
-
 export function Home() {
+  const { logout } = useAuth();
+
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
-  const [selectedEtapa, setSelectedEtapa] = useState(dummyData[0].etapa);
+  const [selectedEtapa, setSelectedEtapa] = useState('');
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  function cadastrar() {
+    navigation.navigate("CreateService");
+  }
+
+  useEffect(() => {
+    getServices();
+  }, []);
+
+  async function getServices() {
+    try {
+      setIsLoading(true);
+      const { data } = await api.get("/services", {
+        params: {
+          page: 0,
+          limit: 9999
+        }
+      });
+      setServices(data.content || []);
+    } catch (error) {
+      Alert.alert("Atenção", "Ocorreu um erro ao recuperar os atendimentos em andamento!");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <Container>
-    <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={28} color="#333" />
+      <SafeAreaView style={styles.container}>
+        {/* Header */}
+        <TouchableOpacity onPress={logout} style={styles.header}>
+          <Text style={styles.headerTitle}>Atendimentos</Text>
+          <View style={{ width: 28 }} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Atendimentos</Text>
-        <View style={{ width: 28 }} />
-      </View>
 
-      {/* Search Row */}
-      <View style={styles.searchRow}>
-        <View style={styles.searchInputWrapper}>
-          <Ionicons name="search-outline" size={20} color="#999" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Nome do cliente"
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-        <TouchableOpacity style={styles.searchButton}>
-          <Text style={styles.searchButtonText}>Pesquisar</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Cadastrar novo veículo */}
-      <TouchableOpacity style={styles.newButton}>
-        <Text style={styles.newButtonText}>Cadastrar novo veículo</Text>
-      </TouchableOpacity>
-
-      {/* Cards */}
-      <ScrollView contentContainerStyle={styles.cardsContainer}>
-        {dummyData.map((item) => (
-          <View key={item.id} style={styles.card}>
-            {/* Avatar + Name */}
-            <View style={styles.cardHeader}>
-              <FontAwesome5 name="user-circle" size={40} color="#999" />
-              <Text style={styles.cardName}>{item.name}</Text>
-            </View>
-
-            {/* Vehicle */}
-            <View style={styles.cardRow}>
-              <Text style={styles.cardLabel}>Veículo:</Text>
-              <Text style={styles.cardValue}>{item.vehicle}</Text>
-            </View>
-
-            {/* Description */}
-            <View style={styles.cardRow}>
-              <Text style={styles.cardLabel}>Descrição:</Text>
-              <Text style={styles.cardValue}>{item.description}</Text>
-            </View>
-
-            {/* Date */}
-            <View style={styles.cardRow}>
-              <Text style={styles.cardLabel}>Previsão:</Text>
-              <View style={styles.dateInput}>
-                <Text>{item.date}</Text>
-                <MaterialIcons name="calendar-today" size={18} color="#999" />
-              </View>
-            </View>
-
-            {/* Etapa Picker */}
-            <View style={styles.cardRow}>
-              <Text style={styles.cardLabel}>Etapa:</Text>
-              <View style={styles.pickerWrapper}>
-                <Picker
-                  selectedValue={
-                    item.id === dummyData[0].id ? selectedEtapa : item.etapa
-                  }
-                  onValueChange={(value) => setSelectedEtapa(value)}
-                  style={styles.picker}
-                  dropdownIconColor="#999"
-                >
-                  <Picker.Item label="Pendente" value="Pendente" />
-                  <Picker.Item label="Em andamento" value="Em andamento" />
-                  <Picker.Item label="Concluído" value="Concluído" />
-                </Picker>
-              </View>
-            </View>
-
-            {/* Actions */}
-            <View style={styles.cardActions}>
-              <TouchableOpacity style={styles.actionButton}>
-                <Text style={styles.actionText}>Gerar QR Code</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.actionButton, { marginLeft: 10 }]}
-              >
-                <Text style={styles.actionText}>Compartilhar</Text>
-              </TouchableOpacity>
-            </View>
+        {/* Search Row */}
+        <View style={styles.searchRow}>
+          <View style={styles.searchInputWrapper}>
+            <Ionicons name="search-outline" size={20} color="#999" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Nome do cliente"
+              value={search}
+              onChangeText={setSearch}
+            />
           </View>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+          <TouchableOpacity style={styles.searchButton}>
+            <Text style={styles.searchButtonText}>Pesquisar</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Cadastrar novo veículo */}
+        <TouchableOpacity style={styles.newButton} onPress={cadastrar}>
+          <Text style={styles.newButtonText}>Cadastrar novo veículo</Text>
+        </TouchableOpacity>
+
+        {/* Lista de atendimentos */}
+        <FlatList
+          contentContainerStyle={styles.cardsContainer}
+          data={services}
+          keyExtractor={(item) => item.id.toString()}
+          onRefresh={getServices}
+          refreshing={isLoading}
+          ListEmptyComponent={() => (
+            <Text style={{ textAlign: 'center', marginTop: 20 }}>
+              Não encontramos nenhum serviço ativo!
+            </Text>
+          )}
+          renderItem={({ item }) => (
+            <View style={styles.card}>
+              {/* Avatar + Nome */}
+              <View style={styles.cardHeader}>
+                <FontAwesome5 name="user-circle" size={40} color="#999" />
+                <Text style={styles.cardName}>{item.proprietario}</Text>
+              </View>
+
+              {/* Veículo */}
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Veículo:</Text>
+                <Text style={styles.cardValue}>{item.veiculo}</Text>
+              </View>
+
+              {/* Título */}
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Título:</Text>
+                <Text style={styles.cardValue}>{item.titulo}</Text>
+              </View>
+
+              {/* Descrição */}
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Descrição:</Text>
+                <Text style={styles.cardValue}>{item.descricao}</Text>
+              </View>
+
+              {/* Data (Exemplo fictício de campo 'dataPrevisao') */}
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Previsão:</Text>
+                <View style={styles.dateInput}>
+                  <Text>{item.dataPrevisao || '—'}</Text>
+                  <MaterialIcons name="calendar-today" size={18} color="#999" />
+                </View>
+              </View>
+
+              {/* Etapa */}
+              <View style={styles.cardRow}>
+                <Text style={styles.cardLabel}>Etapa:</Text>
+                <View style={styles.pickerWrapper}>
+                  <Picker
+                    selectedValue={item.etapa}
+                    onValueChange={(value) => {
+                      setServices((prev) =>
+                        prev.map((s) =>
+                          s.id === item.id ? { ...s, etapa: value } : s
+                        )
+                      );
+                      setSelectedEtapa(value);
+                    }}
+                    style={styles.picker}
+                    dropdownIconColor="#999"
+                  >
+                    <Picker.Item label="Pendente" value="Pendente" />
+                    <Picker.Item label="Em andamento" value="Em andamento" />
+                    <Picker.Item label="Concluído" value="Concluído" />
+                  </Picker>
+                </View>
+              </View>
+
+              {/* Actions */}
+              <View style={styles.cardActions}>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.actionText}>Gerar QR Code</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.actionButton, { marginLeft: 10 }]}
+                >
+                  <Text style={styles.actionText}>Compartilhar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
+      </SafeAreaView>
     </Container>
   );
 }
@@ -160,6 +189,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
+    textAlign: 'center',
     color: '#E91E63',
   },
 
