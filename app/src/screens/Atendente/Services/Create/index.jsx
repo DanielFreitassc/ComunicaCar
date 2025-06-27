@@ -25,7 +25,7 @@ export function CreateService() {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [vehicle, setVehicle] = useState('');
-    const [proprietario, setProprietario] = useState('');
+    const [clientName, setClientName] = useState('');
     const [contactNumber, setContactNumber] = useState('');
     const [conclusionDate, setConclusionDate] = useState(null);
     const [showDatePicker, setShowDatePicker] = useState(false);
@@ -57,13 +57,14 @@ export function CreateService() {
     
     const handleSalvarAtendimento = async () => {
         try {
-            if (!proprietario || !vehicle || !title || !description || !contactNumber || !conclusionDate || !selectedMechanic) {
+            if (!clientName || !vehicle || !title || !description || !contactNumber || !conclusionDate || !selectedMechanic) {
                 Alert.alert("Campos obrigatórios", "Por favor, preencha todos os campos.");
                 return;
             }
 
             const dto = {
                 title,
+                clientName,
                 description,
                 vehicle,
                 contactNumber,
@@ -98,8 +99,8 @@ export function CreateService() {
                             <TextInput
                                 style={styles.input}
                                 placeholder="Ex: João da Silva"
-                                value={proprietario}
-                                onChangeText={setProprietario}
+                                value={clientName}
+                                onChangeText={setClientName}
                             />
                         </View>
 

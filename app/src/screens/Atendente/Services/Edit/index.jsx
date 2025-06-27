@@ -17,6 +17,8 @@ export function EditService() {
     const route = useRoute();
     const { service } = route.params;
 
+    const [clientName, setClientName] = useState(service.clientName || '');
+    
     const [title, setTitle] = useState(service.title || '');
     const [description, setDescription] = useState(service.description || '');
     const [vehicle, setVehicle] = useState(service.vehicle || '');
@@ -25,14 +27,15 @@ export function EditService() {
     const [isLoading, setIsLoading] = useState(false);
     
     async function handleSaveChanges() {
-        if (!title || !vehicle) {
-            Alert.alert("Atenção", "Os campos Título e Veículo são obrigatórios.");
+        if (!title || !vehicle || !clientName) {
+            Alert.alert("Atenção", "Os campos Título, Veículo e Nome do Cliente são obrigatórios.");
             return;
         }
         setIsLoading(true);
 
         const payload = {
             title,
+            clientName, // Agora este valor vem do estado e será enviado para a API
             description,
             vehicle,
             contactNumber,
@@ -47,7 +50,8 @@ export function EditService() {
             navigation.goBack();
         } catch (error) {
             console.error("API RESPONDEU COM ERRO:", error.response?.data || error.message);
-            Alert.alert("Erro", "Não foi possível salvar as alterações. Verifique o terminal para detalhes.");
+            const errorMessage = error.response?.data?.message || "Não foi possível salvar as alterações.";
+            Alert.alert("Erro", errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -59,16 +63,26 @@ export function EditService() {
                 <ScrollView contentContainerStyle={styles.container}>
                     <Text style={styles.title}>Editar Atendimento</Text>
                     <Text style={styles.ticket}>Ticket: {service.ticketNumber}</Text>
+                    
                     <Text style={styles.label}>Título do Serviço</Text>
                     <TextInput style={styles.input} value={title} onChangeText={setTitle} />
+
+                    {/* --- 2. Adicionado campo de entrada para o nome do cliente --- */}
+                    <Text style={styles.label}>Nome do Cliente</Text>
+                    <TextInput style={styles.input} value={clientName} onChangeText={setClientName} />
+                    
                     <Text style={styles.label}>Veículo</Text>
                     <TextInput style={styles.input} value={vehicle} onChangeText={setVehicle} />
+                    
                     <Text style={styles.label}>Descrição</Text>
                     <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription} multiline />
+                    
                     <Text style={styles.label}>Número de Contato</Text>
                     <TextInput style={styles.input} value={contactNumber} onChangeText={setContactNumber} keyboardType="phone-pad" />
+                    
                     <Text style={styles.label}>Data de Previsão</Text>
                     <TextInput style={styles.input} value={conclusionDate} onChangeText={setConclusionDate} placeholder="DD/MM/AAAA" />
+                    
                     <TouchableOpacity style={[styles.button, isLoading && styles.buttonDisabled]} onPress={handleSaveChanges} disabled={isLoading}>
                         <Text style={styles.buttonText}>{isLoading ? "Salvando..." : "Salvar Alterações"}</Text>
                     </TouchableOpacity>

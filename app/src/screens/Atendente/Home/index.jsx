@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   SafeAreaView,
   View,
@@ -13,7 +13,7 @@ import {
   Modal,
   Share,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import QRCodeSVG from 'react-native-qrcode-svg';
@@ -37,19 +37,19 @@ export function Home() {
     navigation.navigate('CreateService');
   }
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      getServices();
-    });
-    return unsubscribe;
-  }, [navigation]);
-
-  async function getServices() {
+  const getServices = useCallback(async (searchTerm = '') => {
     try {
       setIsLoading(true);
-      const { data } = await api.get('/services', {
-        params: { page: 0, limit: 9999 },
-      });
+      const params = {
+        page: 0,
+        limit: 9999,
+      };
+
+      if (searchTerm) {
+        params.client = searchTerm;
+      }
+
+      const { data } = await api.get('/services', { params });
 
       const statusMap = {
         "Pendente": "PENDING",
@@ -66,11 +66,29 @@ export function Home() {
       setServices(translatedServices);
 
     } catch (error) {
+      console.error("Erro ao buscar serviços:", error);
       Alert.alert('Atenção', 'Ocorreu um erro ao recuperar os atendimentos.');
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []); 
+
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      getServices(search);
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [search, getServices]); 
+
+  useFocusEffect(
+    useCallback(() => {
+
+      getServices(search);
+    }, [search, getServices])
+  );
+
 
   async function updateServiceStage(serviceId, newStatus) {
     const originalServices = [...services];
@@ -79,6 +97,7 @@ export function Home() {
 
     const payload = {
       title: serviceToUpdate.title || '',
+      clientName: serviceToUpdate.clientName || '',
       description: serviceToUpdate.description || '',
       vehicle: serviceToUpdate.vehicle || '',
       contactNumber: serviceToUpdate.contactNumber || '',
@@ -158,34 +177,43 @@ export function Home() {
         </View>
 
         <View style={styles.controlsContainer}>
-          <View style={styles.searchRow}>
-            <View style={styles.searchInputWrapper}>
-              <Ionicons name="search-outline" size={20} color="#999" />
-              <TextInput style={styles.searchInput} placeholder="Nome do cliente" placeholderTextColor="#999" value={search} onChangeText={setSearch} />
-            </View>
-            <TouchableOpacity style={styles.searchButton}>
-              <Text style={styles.searchButtonText}>Pesquisar</Text>
-            </TouchableOpacity>
+          <View style={styles.searchInputWrapper}>
+            <Ionicons name="search-outline" size={20} color="#999" />
+            <TextInput 
+              style={styles.searchInput} 
+              placeholder="Buscar por nome do cliente..." 
+              placeholderTextColor="#999" 
+              value={search} 
+              onChangeText={setSearch} 
+            />
           </View>
           <TouchableOpacity style={styles.newButton} onPress={cadastrar}>
-            <Text style={styles.newButtonText}>Cadastrar novo veículo</Text>
+            <Text style={styles.newButtonText}>Cadastrar novo atendimento</Text>
           </TouchableOpacity>
         </View>
 
         <FlatList
           contentContainerStyle={styles.cardsContainer}
+
           data={services}
           keyExtractor={(item) => item.id.toString()}
-          onRefresh={getServices}
+          onRefresh={() => getServices(search)}
           refreshing={isLoading}
           ListEmptyComponent={() => (
-            <View style={styles.emptyListContainer}><Text style={styles.emptyListText}>Não encontramos nenhum serviço ativo!</Text></View>
+            <View style={styles.emptyListContainer}>
+              <Text style={styles.emptyListText}>
+                {isLoading ? 'Buscando...' : (search ? 'Nenhum cliente encontrado.' : 'Não há atendimentos cadastrados.')}
+              </Text>
+            </View>
           )}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <FontAwesome5 name="user-circle" size={40} color="#999" />
-                <Text style={styles.cardName}>Ticket: {item.ticketNumber}</Text>
+                <View style={styles.cardHeaderText}>
+                    <Text style={styles.cardName}>{item.clientName}</Text>
+                    <Text style={styles.cardTicket}>Ticket: {item.ticketNumber}</Text>
+                </View>
               </View>
               <View style={styles.cardRow}><Text style={styles.cardLabel}>Veículo:</Text><Text style={styles.cardValue}>{item.vehicle}</Text></View>
               <View style={styles.cardRow}><Text style={styles.cardLabel}>Título:</Text><Text style={styles.cardValue}>{item.title}</Text></View>
@@ -242,7 +270,6 @@ export function Home() {
   );
 }
 
-// Estilos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -275,36 +302,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
   },
-  searchRow: {
-    flexDirection: 'row',
-    marginBottom: 16,
-    gap: 8,
-  },
   searchInputWrapper: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     paddingHorizontal: 8,
+    marginBottom: 16,
   },
   searchInput: {
     flex: 1,
-    height: 44,
+    height: 48,
     marginLeft: 8,
     fontSize: 16,
     color: '#333',
-  },
-  searchButton: {
-    backgroundColor: '#E91E63',
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: '600',
   },
   newButton: {
     backgroundColor: '#E91E63',
@@ -319,8 +330,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   cardsContainer: {
-    paddingVertical: 20,
+    paddingTop: 20,
     paddingHorizontal: HORIZONTAL_MARGIN,
+    paddingBottom: 40,
   },
   emptyListContainer: {
     flex: 1,
@@ -350,10 +362,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     gap: 12,
   },
+  cardHeaderText: {
+    flex: 1,
+  },
   cardName: {
     fontSize: 18,
     fontWeight: '700',
     color: '#333',
+  },
+  cardTicket: {
+    fontSize: 14,
+    color: '#666',
   },
   cardRow: {
     flexDirection: 'row',

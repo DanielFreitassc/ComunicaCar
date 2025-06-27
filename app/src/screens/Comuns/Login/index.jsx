@@ -25,29 +25,37 @@ export function Login() {
     const [isLogging, setIsLogging] = useState(false);
 
     const [passwordVisible, setPasswordVisible] = useState(false);
-    const [username, setEmail] = useState('fulano');
+    const [username, setUsername] = useState('mecanico');
     const [password, setPassword] = useState('admin');
 
     const authStore = new AuthStore();
 
     const handleLogin = async () => {
+        setIsLogging(true);
         try {
-            setIsLogging(true)
             if (!username || !password) {
                 Alert.alert('Erro', 'Preencha todos os campos');
+                setIsLogging(false);
                 return;
             }
 
             const response = await api.post('/auth/login', { username, password });
-            console.log(response.data)
+            console.log(response.data);
             setToken(response.data.token);
-            setIsAtendente(response.data.role != "EMPLOYEE_MECHANIC");
+            setIsAtendente(response.data.role !== "EMPLOYEE_MECHANIC");
             await authStore.set(response.data);
 
         } catch (error) {
-            Alert.alert('Erro', 'Email ou senha inválidos');
+            if (error.response && (error.response.status === 404 || error.response.status === 401)) {
+                await authStore.remove();
+                setToken(null);
+                setIsAtendente(false); 
+                console.log("Token antigo removido devido a falha no login.");
+            }
+
+            Alert.alert('Erro', 'Nome de usuário ou senha inválidos');
         } finally {
-            setIsLogging(false)
+            setIsLogging(false);
         }
     }
 
@@ -75,7 +83,7 @@ export function Login() {
                         <Feather name="user" size={18} color={colors.gray} style={styles.icon} />
                         <TextInput
                             value={username}
-                            onChangeText={setEmail}
+                            onChangeText={setUsername} 
                             placeholder="Nome de usuário"
                             placeholderTextColor={colors.gray}
                             style={styles.input}
@@ -163,7 +171,7 @@ const styles = StyleSheet.create({
         height: 50,
         fontFamily: "Cairo_500Medium",
         color: colors.grayDark,
-        paddingVertical: 0, // Importante para Android
+        paddingVertical: 0,
     },
     icon: {
         marginRight: 8,

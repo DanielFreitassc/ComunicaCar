@@ -2,7 +2,7 @@ import axios from 'axios';
 import { authInterceptor } from './inteceptors/authInterceptor';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:8080',
+  baseURL: 'https://comunicacar.onrender.com',
 });
 
 api.interceptors.request.use(authInterceptor);
