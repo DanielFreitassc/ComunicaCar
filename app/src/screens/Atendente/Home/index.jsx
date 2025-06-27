@@ -3,7 +3,6 @@ import {
   SafeAreaView,
   View,
   Text,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -11,83 +10,168 @@ import {
   Platform,
   FlatList,
   Alert,
+  Modal,
+  Share,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import QRCodeSVG from 'react-native-qrcode-svg';
 import { Container } from '../../../components/Container';
-import { api } from '../../../infra/apis/api';
+import { api, vercelApi } from '../../../infra/apis/api';
 import { useAuth } from '../../../hooks/authHook';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_MARGIN = 20;
-const CARD_WIDTH = SCREEN_WIDTH - CARD_MARGIN * 2;
+const HORIZONTAL_MARGIN = 16;
 
 export function Home() {
   const { logout } = useAuth();
-
   const navigation = useNavigation();
   const [search, setSearch] = useState('');
-  const [selectedEtapa, setSelectedEtapa] = useState('');
   const [services, setServices] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
 
   function cadastrar() {
-    navigation.navigate("CreateService");
+    navigation.navigate('CreateService');
   }
 
   useEffect(() => {
-    getServices();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      getServices();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   async function getServices() {
     try {
       setIsLoading(true);
-      const { data } = await api.get("/services", {
-        params: {
-          page: 0,
-          limit: 9999
-        }
+      const { data } = await api.get('/services', {
+        params: { page: 0, limit: 9999 },
       });
-      setServices(data.content || []);
+
+      const statusMap = {
+        "Pendente": "PENDING",
+        "Em andamento": "PROGRESS",
+        "Em progresso": "PROGRESS",
+        "Pronto": "READY",
+      };
+
+      const translatedServices = (data.content || []).map(service => ({
+        ...service,
+        status: statusMap[service.status] || service.status,
+      }));
+
+      setServices(translatedServices);
+
     } catch (error) {
-      Alert.alert("Atenção", "Ocorreu um erro ao recuperar os atendimentos em andamento!");
+      Alert.alert('Atenção', 'Ocorreu um erro ao recuperar os atendimentos.');
     } finally {
       setIsLoading(false);
     }
   }
 
+  async function updateServiceStage(serviceId, newStatus) {
+    const originalServices = [...services];
+    const serviceToUpdate = services.find(s => s.id === serviceId);
+    if (!serviceToUpdate) return;
+
+    const payload = {
+      title: serviceToUpdate.title || '',
+      description: serviceToUpdate.description || '',
+      vehicle: serviceToUpdate.vehicle || '',
+      contactNumber: serviceToUpdate.contactNumber || '',
+      conclusionDate: serviceToUpdate.conclusionDate || '',
+      mechanicId: serviceToUpdate.mechanicId?.id, 
+      status: newStatus, 
+    };
+    
+    setServices(prev => 
+      prev.map(s => (s.id === serviceId ? { ...s, status: newStatus } : s))
+    );
+
+    try {
+      await api.put(`/services/${serviceId}`, payload);
+    } catch (error) {
+      console.error("Erro ao atualizar o serviço:", error.response?.data || error.message);
+      Alert.alert("Erro", "Não foi possível atualizar a etapa.");
+      setServices(originalServices);
+    }
+  }
+
+  function handleEdit(service) {
+    navigation.navigate('EditService', { service: service });
+  }
+
+  async function handleDelete(serviceId) {
+    Alert.alert(
+      "Confirmar Exclusão",
+      "Você tem certeza que deseja apagar este atendimento?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Apagar",
+          onPress: async () => {
+            try {
+              await api.delete(`/services/${serviceId}`);
+              setServices(prevServices => prevServices.filter(service => service.id !== serviceId));
+              Alert.alert("Sucesso", "Atendimento apagado.");
+            } catch (error) {
+              Alert.alert("Erro", "Não foi possível apagar o atendimento.");
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
+  }
+
+  const handleGenerateQrCode = (service) => {
+    setSelectedService(service);
+    setModalVisible(true);
+  };
+
+  const handleShare = async (serviceId) => {
+    const shareableLink = `${vercelApi.defaults.baseURL}/order/${serviceId}`;
+    try {
+      await Share.share({
+        message: `Acompanhe o status do seu serviço: ${shareableLink}`,
+        url: shareableLink,
+        title: 'Acompanhar Ordem de Serviço'
+      });
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível compartilhar o link.');
+    }
+  };
+
+  const selectedServiceUrl = selectedService ? `${vercelApi.defaults.baseURL}/order/${selectedService.id}` : '';
+
   return (
     <Container>
       <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <TouchableOpacity onPress={logout} style={styles.header}>
+        <View style={styles.header}>
           <Text style={styles.headerTitle}>Atendimentos</Text>
-          <View style={{ width: 28 }} />
-        </TouchableOpacity>
-
-        {/* Search Row */}
-        <View style={styles.searchRow}>
-          <View style={styles.searchInputWrapper}>
-            <Ionicons name="search-outline" size={20} color="#999" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Nome do cliente"
-              value={search}
-              onChangeText={setSearch}
-            />
-          </View>
-          <TouchableOpacity style={styles.searchButton}>
-            <Text style={styles.searchButtonText}>Pesquisar</Text>
+          <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+            <MaterialIcons name="logout" size={24} color="#E91E63" />
           </TouchableOpacity>
         </View>
 
-        {/* Cadastrar novo veículo */}
-        <TouchableOpacity style={styles.newButton} onPress={cadastrar}>
-          <Text style={styles.newButtonText}>Cadastrar novo veículo</Text>
-        </TouchableOpacity>
+        <View style={styles.controlsContainer}>
+          <View style={styles.searchRow}>
+            <View style={styles.searchInputWrapper}>
+              <Ionicons name="search-outline" size={20} color="#999" />
+              <TextInput style={styles.searchInput} placeholder="Nome do cliente" placeholderTextColor="#999" value={search} onChangeText={setSearch} />
+            </View>
+            <TouchableOpacity style={styles.searchButton}>
+              <Text style={styles.searchButtonText}>Pesquisar</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.newButton} onPress={cadastrar}>
+            <Text style={styles.newButtonText}>Cadastrar novo veículo</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Lista de atendimentos */}
         <FlatList
           contentContainerStyle={styles.cardsContainer}
           data={services}
@@ -95,108 +179,106 @@ export function Home() {
           onRefresh={getServices}
           refreshing={isLoading}
           ListEmptyComponent={() => (
-            <Text style={{ textAlign: 'center', marginTop: 20 }}>
-              Não encontramos nenhum serviço ativo!
-            </Text>
+            <View style={styles.emptyListContainer}><Text style={styles.emptyListText}>Não encontramos nenhum serviço ativo!</Text></View>
           )}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              {/* Avatar + Nome */}
               <View style={styles.cardHeader}>
                 <FontAwesome5 name="user-circle" size={40} color="#999" />
-                <Text style={styles.cardName}>{item.proprietario}</Text>
+                <Text style={styles.cardName}>Ticket: {item.ticketNumber}</Text>
               </View>
-
-              {/* Veículo */}
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>Veículo:</Text>
-                <Text style={styles.cardValue}>{item.veiculo}</Text>
-              </View>
-
-              {/* Título */}
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>Título:</Text>
-                <Text style={styles.cardValue}>{item.titulo}</Text>
-              </View>
-
-              {/* Descrição */}
-              <View style={styles.cardRow}>
-                <Text style={styles.cardLabel}>Descrição:</Text>
-                <Text style={styles.cardValue}>{item.descricao}</Text>
-              </View>
-
-              {/* Data (Exemplo fictício de campo 'dataPrevisao') */}
+              <View style={styles.cardRow}><Text style={styles.cardLabel}>Veículo:</Text><Text style={styles.cardValue}>{item.vehicle}</Text></View>
+              <View style={styles.cardRow}><Text style={styles.cardLabel}>Título:</Text><Text style={styles.cardValue}>{item.title}</Text></View>
+              <View style={styles.cardRow}><Text style={styles.cardLabel}>Descrição:</Text><Text style={styles.cardValue} numberOfLines={2}>{item.description}</Text></View>
               <View style={styles.cardRow}>
                 <Text style={styles.cardLabel}>Previsão:</Text>
-                <View style={styles.dateInput}>
-                  <Text>{item.dataPrevisao || '—'}</Text>
-                  <MaterialIcons name="calendar-today" size={18} color="#999" />
-                </View>
+                <View style={styles.dateInput}><Text style={styles.dateText}>{item.conclusionDate || '—'}</Text><MaterialIcons name="calendar-today" size={18} color="#999" /></View>
               </View>
-
-              {/* Etapa */}
               <View style={styles.cardRow}>
                 <Text style={styles.cardLabel}>Etapa:</Text>
                 <View style={styles.pickerWrapper}>
-                  <Picker
-                    selectedValue={item.etapa}
-                    onValueChange={(value) => {
-                      setServices((prev) =>
-                        prev.map((s) =>
-                          s.id === item.id ? { ...s, etapa: value } : s
-                        )
-                      );
-                      setSelectedEtapa(value);
-                    }}
-                    style={styles.picker}
+                  <Picker 
+                    selectedValue={item.status}
+                    onValueChange={(value) => updateServiceStage(item.id, value)} 
+                    style={styles.picker} 
                     dropdownIconColor="#999"
                   >
-                    <Picker.Item label="Pendente" value="Pendente" />
-                    <Picker.Item label="Em andamento" value="Em andamento" />
-                    <Picker.Item label="Concluído" value="Concluído" />
+                    <Picker.Item label="Pendente" value="PENDING" />
+                    <Picker.Item label="Em andamento" value="PROGRESS" />
+                    <Picker.Item label="Pronto" value="READY" />
                   </Picker>
                 </View>
               </View>
-
-              {/* Actions */}
               <View style={styles.cardActions}>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.actionText}>Gerar QR Code</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.actionButton, { marginLeft: 10 }]}
-                >
-                  <Text style={styles.actionText}>Compartilhar</Text>
-                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleGenerateQrCode(item)}><Text style={styles.actionText}>QR Code</Text></TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}><Text style={styles.actionText}>Editar</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={() => handleDelete(item.id)}><Text style={styles.actionText}>Apagar</Text></TouchableOpacity>
               </View>
             </View>
           )}
         />
+        <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => { setModalVisible(!modalVisible); setSelectedService(null); }}>
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              <Text style={styles.modalTitle}>Acompanhar Serviço</Text>
+              {selectedService && (
+                <>
+                  <View style={styles.qrCodeContainer}><QRCodeSVG value={selectedServiceUrl} size={220} /></View>
+                  <Text style={styles.modalText}>Link de acompanhamento:</Text>
+                  <TextInput style={styles.linkInput} value={selectedServiceUrl} editable={false} multiline />
+                  <TouchableOpacity style={[styles.modalButton, styles.shareButton]} onPress={() => { handleShare(selectedService.id); setModalVisible(false); }}>
+                    <Text style={styles.modalButtonText}>Compartilhar Link</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+              <TouchableOpacity style={[styles.modalButton, styles.closeButton]} onPress={() => { setModalVisible(!modalVisible); setSelectedService(null); }}>
+                <Text style={styles.modalButtonText}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
     </Container>
   );
 }
 
+// Estilos
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F7F7',
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: HORIZONTAL_MARGIN,
+    backgroundColor: '#fff',
+    position: 'relative',
   },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    textAlign: 'center',
     color: '#E91E63',
   },
-
+  logoutButton: {
+    position: 'absolute',
+    right: HORIZONTAL_MARGIN,
+    alignSelf: 'center',
+  },
+  controlsContainer: {
+    paddingHorizontal: HORIZONTAL_MARGIN,
+    paddingTop: 16,
+    paddingBottom: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEE',
+  },
   searchRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 12,
+    marginBottom: 16,
+    gap: 8,
   },
   searchInputWrapper: {
     flex: 1,
@@ -205,12 +287,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     paddingHorizontal: 8,
-    marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    height: 40,
-    marginLeft: 4,
+    height: 44,
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#333',
   },
   searchButton: {
     backgroundColor: '#E91E63',
@@ -223,21 +306,34 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
   },
-
   newButton: {
     backgroundColor: '#E91E63',
-    marginHorizontal: 16,
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 12,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   newButtonText: {
     color: '#fff',
     fontWeight: '600',
+    fontSize: 16,
+  },
+  cardsContainer: {
+    paddingVertical: 20,
+    paddingHorizontal: HORIZONTAL_MARGIN,
+  },
+  emptyListContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 50,
+  },
+  emptyListText: {
+    fontSize: 16,
+    color: '#666',
   },
   card: {
-    width: CARD_WIDTH,
+    width: '100%',
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 16,
@@ -246,62 +342,76 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
+    gap: 12,
   },
   cardName: {
     fontSize: 18,
     fontWeight: '700',
-    marginLeft: 8,
     color: '#333',
   },
-
   cardRow: {
     flexDirection: 'row',
-    alignItems: Platform.OS === 'ios' ? 'flex-start' : 'center',
+    alignItems: 'center',
     marginBottom: 12,
+    gap: 8,
   },
   cardLabel: {
     width: 80,
     fontWeight: '600',
     color: '#555',
+    fontSize: 14,
   },
   cardValue: {
     flex: 1,
     backgroundColor: '#F5F5F5',
     borderRadius: 6,
-    padding: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     color: '#333',
+    fontSize: 14,
   },
-
   dateInput: {
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#F5F5F5',
     borderRadius: 6,
-    padding: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
+  dateText: {
+    color: '#333',
+    fontSize: 14,
+  },
   pickerWrapper: {
     flex: 1,
     backgroundColor: '#F5F5F5',
     borderRadius: 6,
-    overflow: 'hidden',
+    justifyContent: 'center',
+    ...(Platform.OS === 'android' && {
+      height: 48,
+    }),
   },
   picker: {
-    height: 40,
     width: '100%',
+    color: '#333',
+    ...(Platform.OS === 'ios' && {
+      height: 48,
+    }),
   },
-
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 8,
+    flexWrap: 'wrap',
+    marginTop: 16,
+    gap: 10,
   },
   actionButton: {
     backgroundColor: '#E91E63',
@@ -313,5 +423,76 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  deleteButton: {
+    backgroundColor: '#8B0000',
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalView: {
+    margin: 20,
+    width: '90%',
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  qrCodeContainer: {
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 8,
+  },
+  modalText: {
+    marginBottom: 8,
+    textAlign: 'center',
+    fontWeight: '600',
+    color: '#555'
+  },
+  linkInput: {
+    width: '100%',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 6,
+    padding: 10,
+    color: '#333',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontSize: 14,
+  },
+  modalButton: {
+    borderRadius: 8,
+    padding: 12,
+    elevation: 2,
+    width: '100%',
+    marginBottom: 10,
+  },
+  shareButton: {
+    backgroundColor: '#E91E63',
+  },
+  closeButton: {
+    backgroundColor: '#999',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
