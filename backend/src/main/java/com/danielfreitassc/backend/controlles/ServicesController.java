@@ -23,6 +23,7 @@ import com.danielfreitassc.backend.dtos.ServicePublicResponseDto;
 import com.danielfreitassc.backend.dtos.ServicesRequestDto;
 import com.danielfreitassc.backend.dtos.ServicesResponseDto;
 import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.models.UserRole;
 import com.danielfreitassc.backend.services.ServicesService;
 
 import jakarta.validation.Valid;
@@ -43,7 +44,8 @@ public class ServicesController {
     @GetMapping
     public Page<ServicesResponseDto> getServices(Pageable pageable,@RequestParam(required = false) String status, @AuthenticationPrincipal UserEntity user) {
         UUID mechanicId = user.getId();
-        return servicesService.getServices(pageable,status, mechanicId.toString());
+        UserRole userRole = user.getRole();
+        return servicesService.getServices(pageable,status, mechanicId.toString(), userRole);
     }
 
     @GetMapping("/{id}")
