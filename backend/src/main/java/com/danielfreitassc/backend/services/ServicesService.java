@@ -57,17 +57,17 @@ public class ServicesService {
     public Page<ServicesResponseDto> getServices(Pageable pageable, String status, String mechanicIdStr, UserRole userRole) {
         StatusEnum statusEnum = null;
         UUID mechanicId = null;
+        // Validação de status
+        if (status != null && !status.isBlank()) {
+            try {
+                statusEnum = StatusEnum.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException | NullPointerException e) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido");
+            }
+        }
+
 
         if(userRole.equals(UserRole.EMPLOYEE_MECHANIC)) {
-             // Validação de status
-            if (status != null && !status.isBlank()) {
-                try {
-                    statusEnum = StatusEnum.valueOf(status.toUpperCase());
-                } catch (IllegalArgumentException | NullPointerException e) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status inválido");
-                }
-            }
-
             // Validação de mechanicId
             if (mechanicIdStr != null && !mechanicIdStr.isBlank()) {
                 try {
@@ -77,14 +77,16 @@ public class ServicesService {
                 }
             }
 
+        
             Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndMechanicId(statusEnum, mechanicId);
             Page<ServicesEntity> servicePage = servicesRepository.findAll(spec, pageable);
 
             return servicePage.map(servicesMapper::toDto);
         }
 
-        Page<ServicesEntity> services = servicesRepository.findAll(pageable);
-        
+        // Outras roles — apenas filtro por status
+        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatus(statusEnum);
+        Page<ServicesEntity> services = servicesRepository.findAll(spec, pageable);
         return services.map(servicesMapper::toDto);
        
     }
