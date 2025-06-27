@@ -12,6 +12,7 @@ import lombok.Data;
 public class ServicePublicResponseDto {
     private String id;
     private String ticketNumber;
+    private String clientName;
     private String title;
     private String vehicle;
     private String description;

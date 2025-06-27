@@ -13,6 +13,8 @@ import jakarta.validation.constraints.NotNull;
 public record ServicesRequestDto(
     @NotBlank(message = "O título é necessário")
     String title,
+    @NotBlank(message = "Nome do cliente é necessário")
+    String clientName,
     @NotBlank(message = "O nome do veículo é necessário")
     String vehicle,
     @NotBlank(message = "Uma descrição é necessária")

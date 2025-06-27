@@ -32,6 +32,7 @@ public class ServicesEntity {
 
     private String ticketNumber;
     private String title;
+    private String clientName;
     private String vehicle;
     private String description;
     private String contactNumber;

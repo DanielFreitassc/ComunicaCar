@@ -13,7 +13,7 @@ import java.util.UUID;
 @Service
 public class ServicesSpecifications {
 
-    public static Specification<ServicesEntity> filterByStatusAndMechanicId(StatusEnum status, UUID mechanicId) {
+    public static Specification<ServicesEntity> filterByStatusAndMechanicId(StatusEnum status, UUID mechanicId, String clientName) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -25,18 +25,29 @@ public class ServicesSpecifications {
                 predicates.add(criteriaBuilder.equal(root.get("mechanicId").get("id"), mechanicId));
             }
 
+            if (clientName != null && !clientName.isBlank()) {
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("clientName")), "%" + clientName.toLowerCase() + "%"));
+            }
+
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
         
     }
 
-    public static Specification<ServicesEntity> filterByStatus(StatusEnum status) {
+    public static Specification<ServicesEntity> filterByStatusAndName(StatusEnum status, String clientName) {
         return (root, query, criteriaBuilder) -> {
-            if (status == null) {
-                return criteriaBuilder.conjunction();
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
             }
-            return criteriaBuilder.equal(root.get("status"), status);
+            
+            if (clientName != null && !clientName.isBlank()) {
+                predicates.add(criteriaBuilder.like(criteriaBuilder.lower(root.get("clientName")), "%" + clientName.toLowerCase() + "%"));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 }

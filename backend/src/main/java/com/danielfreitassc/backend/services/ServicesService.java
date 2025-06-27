@@ -54,7 +54,7 @@ public class ServicesService {
         return new MessageAndIdDto("Ordem de serviço cadastrada com sucesso", servicesEntity.getId());
     }
 
-    public Page<ServicesResponseDto> getServices(Pageable pageable, String status, String mechanicIdStr, UserRole userRole) {
+    public Page<ServicesResponseDto> getServices(Pageable pageable, String status, String mechanicIdStr, UserRole userRole, String clientName) {
         StatusEnum statusEnum = null;
         UUID mechanicId = null;
         // Validação de status
@@ -78,14 +78,14 @@ public class ServicesService {
             }
 
         
-            Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndMechanicId(statusEnum, mechanicId);
+            Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndMechanicId(statusEnum, mechanicId, clientName);
             Page<ServicesEntity> servicePage = servicesRepository.findAll(spec, pageable);
 
             return servicePage.map(servicesMapper::toDto);
         }
 
         // Outras roles — apenas filtro por status
-        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatus(statusEnum);
+        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndName(statusEnum, clientName);
         Page<ServicesEntity> services = servicesRepository.findAll(spec, pageable);
         return services.map(servicesMapper::toDto);
        

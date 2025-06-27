@@ -42,10 +42,10 @@ public class ServicesController {
     }
 
     @GetMapping
-    public Page<ServicesResponseDto> getServices(Pageable pageable,@RequestParam(required = false) String status, @AuthenticationPrincipal UserEntity user) {
+    public Page<ServicesResponseDto> getServices(Pageable pageable,@RequestParam(required = false) String status, @AuthenticationPrincipal UserEntity user, @RequestParam(required = false, name = "client") String clientName) {
         UUID mechanicId = user.getId();
         UserRole userRole = user.getRole();
-        return servicesService.getServices(pageable,status, mechanicId.toString(), userRole);
+        return servicesService.getServices(pageable,status, mechanicId.toString(), userRole, clientName);
     }
 
     @GetMapping("/{id}")

@@ -38,8 +38,8 @@ public class AdminUserInitializer {
 
             // Conta secretario
             UserEntity secretario = new UserEntity();
-            secretario.setName("secretario");
-            secretario.setUsername("ciclano");
+            secretario.setName("atendente");
+            secretario.setUsername("atendente");
             secretario.setPassword(encryptedPassword);
             secretario.setRole(UserRole.EMPLOYEE_SECRETARY);
             userRepository.save(secretario);
@@ -48,7 +48,7 @@ public class AdminUserInitializer {
             // Conta mecanico
             UserEntity mecanico = new UserEntity();
             mecanico.setName("mecanico");
-            mecanico.setUsername("fulano");
+            mecanico.setUsername("mecanico");
             mecanico.setPassword(encryptedPassword);
             mecanico.setRole(UserRole.EMPLOYEE_MECHANIC);
             userRepository.save(mecanico);
