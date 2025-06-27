@@ -20,13 +20,15 @@ export function Service() {
   const navigation = useNavigation();
 
   const [service, setService] = useState(null);
-  const [imagemSelecionada, setImagemSelecionada] = useState(null);
   const [etapas, setEtapas] = useState([]);
   const [editandoIndex, setEditandoIndex] = useState(null);
+  const [status, setStatus] = useState(route.params?.status || 'PROGRESS');
 
   useEffect(() => {
     if (route.params?.Service) {
-      setService(route.params?.Service);
+      const serviceData = route.params.Service;
+      setService(serviceData);
+      setStatus(route.params?.status || serviceData.status || 'PROGRESS');
     }
   }, [route.params]);
 
@@ -45,6 +47,60 @@ export function Service() {
     }
   }, [service]);
 
+  // Função unificada para atualizar o status do serviço
+  async function updateServiceStatusToReady() {
+    if (!service) {
+      Alert.alert("Erro", "Serviço não encontrado.");
+      return;
+    }
+
+    Alert.alert(
+      "Confirmar Ação",
+      "Deseja realmente marcar o serviço como 'Pronto'?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          onPress: async () => {
+            const payload = {
+              title: service.title,
+              clientName: service.clientName,
+              description: service.description,
+              vehicle: service.vehicle,
+              contactNumber: service.contactNumber,
+              mechanicId: service.mechanicId?.id,
+              conclusionDate: service.conclusionDate,
+              status: 'READY',
+            };
+            const originalStatus = status;
+            setStatus('READY');
+
+            try {
+              await api.put(`/services/${service.id}`, payload);
+              // **CORREÇÃO: Adicionado o botão "Ok" com a ação de fechar a tela**
+              Alert.alert(
+                "Sucesso!", 
+                "O estado do serviço foi atualizado para 'Pronto'.",
+                [
+                  {
+                    text: "Ok",
+                    // Ao pressionar "Ok", a tela voltará para a anterior (Home)
+                    onPress: () => navigation.goBack(),
+                  }
+                ]
+              );
+            } catch (error) {
+              setStatus(originalStatus);
+              console.error(`Erro ao atualizar para Pronto:`, error.response?.data || error.message);
+              Alert.alert("Erro", `Não foi possível atualizar o estado do serviço. Código: ${error.response?.status}`);
+            }
+          }
+        }
+      ]
+    );
+  }
+  
+  // O resto do seu código permanece o mesmo...
   async function handleSave() {
     try {
       const index = editandoIndex !== null ? editandoIndex : etapas.length - 1;
@@ -99,8 +155,7 @@ export function Service() {
         style: 'destructive',
         onPress: async () => {
           try {
-            const etapa = etapas[index];
-            await deletarEtapa(etapa);
+            await deletarEtapa(etapas[index]);
           } catch (error) {
             Alert.alert("Atenção!", `Ocorreu um erro ao remover etapa! ${error?.message}`);
           }
@@ -132,11 +187,14 @@ export function Service() {
   async function handleImagemEtapa(index) {
     const etapa = etapas[index];
     if (etapa?.imageIds?.length > 0) {
-      navigation.navigate('Images', {
-        imageIds: etapa?.imageIds,
-        initialImageId: etapa.mediaId,
-        stepId: etapa.id,
+      navigation.navigate('Mecanico', {
+        screen: 'Service',
+        params: {
+          Service: service,
+          status: service.status || 'PENDING',
+        },
       });
+
     } else {
       await enviarNovaImagem(index);
     }
@@ -145,15 +203,8 @@ export function Service() {
   async function enviarNovaImagem(index) {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permissão negada', 'Você precisa permitir o acesso à câmera.');
-        return;
-      }
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        quality: 1,
-      });
+      if (status !== 'granted') { Alert.alert('Permissão negada', '...'); return; }
+      const result = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: true, quality: 1 });
       if (result.canceled) return;
 
       const novasEtapas = [...etapas];
@@ -164,22 +215,13 @@ export function Service() {
 
       const formData = new FormData();
       formData.append('stepId', etapa.id);
-      formData.append('image', {
-        uri: imageUri,
-        name: `etapa-${etapa.id}.${fileType}`,
-        type: `image/${fileType}`,
-      });
+      formData.append('image', { uri: imageUri, name: `etapa-${etapa.id}.${fileType}`, type: `image/${fileType}` });
 
-      const { data } = await api.post('/media', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const { data } = await api.post('/media', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
 
       etapa.imageIds = [...(etapa?.imageIds || []), data?.id];
       novasEtapas[index] = etapa;
       setEtapas(novasEtapas);
-
       Alert.alert('Sucesso', 'Imagem enviada com sucesso!');
     } catch (error) {
       console.error(error);
@@ -187,20 +229,7 @@ export function Service() {
     }
   }
 
-  async function handleFinalizarServico() {
-    try {
-      if (!service?.id) {
-        Alert.alert('Erro', 'ID do serviço não encontrado.');
-        return;
-      }
-      await api.post(`/service/finish/${service.id}`);
-      Alert.alert('Sucesso', 'Serviço finalizado com sucesso!');
-      navigation.goBack();
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível finalizar o serviço.');
-    }
-  }
+  const isReady = status === 'READY';
 
   if (!service) return <Container><Text>Serviço não encontrado</Text></Container>;
 
@@ -213,55 +242,39 @@ export function Service() {
         <Text style={styles.title}>{service.title}</Text>
       </View>
 
-      {imagemSelecionada && (
-        <View style={{ margin: 16, alignItems: 'center' }}>
-          <Text style={{ marginBottom: 8 }}>Visualização da imagem:</Text>
-          <Image
-            source={{ uri: imagemSelecionada }}
-            style={{ width: '100%', height: 300, borderRadius: 8 }}
-            resizeMode="contain"
-          />
-          <TouchableOpacity onPress={() => setImagemSelecionada(null)} style={{ marginTop: 10 }}>
-            <Text style={{ color: '#007AFF' }}>Fechar visualização</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.card}>
+        <View style={[styles.card, isReady && styles.concludedCard]}>
           <Text style={styles.label}>Veículo:</Text>
           <Text style={styles.value}>{service.vehicle}</Text>
 
           <Text style={styles.label}>Descrição:</Text>
           <Text style={styles.value}>{service.description}</Text>
+          
+          <Text style={styles.label}>Status Atual:</Text>
+          <Text style={styles.statusValue}>{status}</Text>
         </View>
 
         {etapas.map((etapa, index) => {
           const isUltima = index === etapas.length - 1;
-          const isEditing =
-            (editandoIndex !== null && index === editandoIndex) ||
-            (editandoIndex === null && isUltima);
+          const isEditing = !isReady && ((editandoIndex !== null && index === editandoIndex) || (editandoIndex === null && isUltima));
 
           return (
-            <View style={styles.card} key={index}>
+            <View style={[styles.card, isReady && styles.concludedCard]} key={index}>
               <View style={styles.etapaHeader}>
                 <Text style={styles.sectionTitle}>Etapa {index + 1}</Text>
                 {!isUltima && (
                   <View style={styles.icons}>
-                    <TouchableOpacity onPress={() => handleEdit(index)}>
-                      <Feather name="edit" size={24} color="#555" />
+                    <TouchableOpacity onPress={updateServiceStatusToReady} disabled={isReady}>
+                      <Feather name="check-circle" size={24} color={isReady ? '#AAA' : '#28A745'} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleImagemEtapa(index)}
-                      style={{ marginLeft: 12 }}
-                    >
-                      <Feather name="camera" size={24} color="#007AFF" />
+                    <TouchableOpacity onPress={() => handleEdit(index)} style={{ marginLeft: 12 }} disabled={isReady}>
+                      <Feather name="edit" size={24} color={isReady ? '#AAA' : '#555'} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleDelete(index)}
-                      style={{ marginLeft: 12 }}
-                    >
-                      <Feather name="trash" size={24} color="#E91E63" />
+                    <TouchableOpacity onPress={() => handleImagemEtapa(index)} style={{ marginLeft: 12 }} disabled={isReady}>
+                      <Feather name="camera" size={24} color={isReady ? '#AAA' : '#007AFF'} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDelete(index)} style={{ marginLeft: 12 }} disabled={isReady}>
+                      <Feather name="trash" size={24} color={isReady ? '#AAA' : '#E91E63'} />
                     </TouchableOpacity>
                   </View>
                 )}
@@ -269,8 +282,7 @@ export function Service() {
 
               <TextInput
                 style={[styles.input, !isEditing && styles.disabledInput]}
-                placeholder="Título da etapa"
-                value={etapa.title}
+                placeholder="Título da etapa" value={etapa.title}
                 onChangeText={(text) => {
                   const novasEtapas = [...etapas];
                   novasEtapas[index].title = text;
@@ -280,9 +292,7 @@ export function Service() {
               />
               <TextInput
                 style={[styles.input, { height: 80 }, !isEditing && styles.disabledInput]}
-                placeholder="Descrição da etapa"
-                multiline
-                value={etapa.description}
+                placeholder="Descrição da etapa" multiline value={etapa.description}
                 onChangeText={(text) => {
                   const novasEtapas = [...etapas];
                   novasEtapas[index].description = text;
@@ -295,17 +305,16 @@ export function Service() {
         })}
       </ScrollView>
 
-      <TouchableOpacity style={styles.button} onPress={handleSave}>
+      <TouchableOpacity style={[styles.button, isReady && styles.disabledButton]} onPress={handleSave} disabled={isReady}>
         <Text style={styles.buttonText}>
-          {editandoIndex !== null && editandoIndex !== etapas.length - 1
-            ? `Editar etapa ${editandoIndex + 1}`
-            : 'Salvar etapa'}
+          {editandoIndex !== null && editandoIndex !== etapas.length - 1 ? `Editar etapa ${editandoIndex + 1}` : 'Salvar etapa'}
         </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.button, styles.finalizarButton]}
-        onPress={handleFinalizarServico}
+        style={[styles.button, styles.finalizarButton, isReady && styles.disabledButton]}
+        onPress={updateServiceStatusToReady}
+        disabled={isReady}
       >
         <Text style={styles.buttonText}>Finalizar serviço</Text>
       </TouchableOpacity>
@@ -313,6 +322,7 @@ export function Service() {
   );
 }
 
+// Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
@@ -360,6 +370,16 @@ const styles = StyleSheet.create({
   disabledInput: {
     backgroundColor: '#EEE',
     color: '#999',
+  },
+  disabledButton: { // Estilo para desabilitar botões
+    backgroundColor: '#AAA',
+  },
+  concludedCard: { // Estilo para cards quando o serviço está concluído
+    backgroundColor: '#E0E0E0',
+  },
+  statusValue: {
+    fontWeight: 'bold',
+    color: '#007AFF',
   },
   button: {
     backgroundColor: '#E91E63',

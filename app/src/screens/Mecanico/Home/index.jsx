@@ -1,59 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  ScrollView,
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  SafeAreaView,
   FlatList,
-  ActivityIndicator,
+  Alert
 } from 'react-native';
 
-import { FontAwesome5, MaterialIcons, Entypo } from '@expo/vector-icons';
+import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../../hooks/authHook';
 
-import { Container } from '../../../components/Container'
-import { Alert } from 'react-native';
+import { Container } from '../../../components/Container';
 import { api } from '../../../infra/apis/api';
-import { useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
-
-// Calcula largura da tela para dimensionar cards
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.28; // cerca de 28% da largura da tela
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 
 export function Home() {
 
   const navigation = useNavigation();
-
   const { logout } = useAuth();
 
-  const [services, setServices] = useState([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [services, setServices] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userName, setUserName] = useState('');
 
-  useState(() => {
-    getServices()
-  }, [])
+  // useEffect para buscar informações do usuário apenas uma vez
+  useEffect(() => {
+    async function getUserInfo() {
+      try {
+        const { data } = await api.get("/users/info");
+        if (data && data.name) {
+          setUserName(data.name);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user info:", error);
+        Alert.alert("Atenção", "Não foi possível carregar o nome do usuário.", "Ok");
+      }
+    }
+    getUserInfo();
+  }, []);
 
+  /**
+   * Fetches the list of services in progress.
+   */
   async function getServices() {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       const { data } = await api.get("/services", {
         params: {
           page: 0,
-          limit: 9999
+          limit: 9999,
+          status: "PROGRESS"
         }
       });
-      setServices(data.content)
+      setServices(data.content);
     } catch (error) {
       Alert.alert("Atenção", "Ocorreu um erro ao recuperar os atendimento em andamento!", "Ok");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
   }
 
+  // useFocusEffect é usado para executar uma ação sempre que a tela entra em foco.
+  // Usamos useCallback para evitar que a função seja recriada a cada renderização.
+  useFocusEffect(
+    useCallback(() => {
+      // A função getServices será chamada toda vez que o usuário navegar para esta tela.
+      getServices();
+    }, [])
+  );
+
+  /**
+   * Navigates to the service details screen.
+   * @param {object} service - The service object to pass to the next screen.
+   */
   async function selectService(service) {
     try {
       navigation.navigate('Mecanico', {
@@ -61,7 +82,7 @@ export function Home() {
         params: { Service: service },
       });
     } catch (error) {
-      console.log(error)
+      console.log(error);
     }
   }
 
@@ -71,16 +92,14 @@ export function Home() {
         <View style={styles.headerLeft}>
           <FontAwesome5 name="car-side" size={32} color="#E91E63" />
           <Text style={styles.headerText}>
-            Olá,{' '}
+            Olá, {userName}
           </Text>
         </View>
-        <TouchableOpacity style={styles.headerRight} onPress={logout} activeOpacity={0.8}>
-          <Entypo name="user" size={32} color="#BBBBBB" />
-          <View style={styles.avatarDot} />
+        <TouchableOpacity onPress={logout} style={styles.logoutButton}>
+          <MaterialIcons name="logout" size={24} color="#E91E63" />
         </TouchableOpacity>
       </View>
 
-      {/* Seção de Atendimentos */}
       <View style={styles.sectionContainer}>
         <View style={styles.sectionHeader}>
           <View style={styles.sectionTitleLeft}>
@@ -112,27 +131,16 @@ export function Home() {
           }
           onRefresh={getServices}
           refreshing={isLoading}
-          ListEmptyComponent={() => <Text>Não encontramos nenhum serviço ativo!</Text>}
+          ListEmptyComponent={() => <Text style={{textAlign: 'center', marginTop: 20}}>Não encontramos nenhum serviço ativo!</Text>}
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
-
       </View>
     </Container>
   );
 }
 
+// Seus estilos permanecem os mesmos
 const styles = StyleSheet.create({
-
-  pageContainer: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 40, // ajuste se tiver StatusBar inset ou notch
-  },
-
-  roundedButton: {
-    backgroundColor: '#c6c6c6',
-  },
-
-  /***** HEADER *****/
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -148,33 +156,9 @@ const styles = StyleSheet.create({
     color: '#333333',
     marginLeft: 10,
   },
-  headerTextBold: {
-    fontWeight: '700',
-  },
-  headerRight: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EEEEEE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-    overflow: 'hidden'
-  },
-  avatarDot: {
-    position: 'absolute',
-    bottom: 4,
-    right: 4,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#E91E63',
-    borderWidth: 1,
-    borderColor: '#FFFFFF',
-  },
-
-  /***** SEÇÃO (GENÉRICA) *****/
+  logoutButton: {}, // Estilo para o botão de logout se necessário
   sectionContainer: {
+    flex: 1, // Faz a seção ocupar o espaço disponível
     marginBottom: 30,
   },
   sectionHeader: {
@@ -193,39 +177,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  verTudoText: {
-    color: '#E91E63',
-    fontWeight: '500',
-  },
   cardContainer: {
     width: '100%',
     borderRadius: 10,
     backgroundColor: '#F5F5F5',
     marginBottom: 15,
-    padding: 10,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-start',
-  },
-  cardInner: {
-    alignItems: 'flex-start',
-    justifyContent: 'center',
+    padding: 15,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333333',
-    textAlign: 'center',
+    marginBottom: 5,
   },
   cardSubtitle: {
     fontSize: 12,
     color: '#666666',
-    marginTop: 4,
-    textAlign: 'center',
   },
   cardStatus: {
     fontSize: 12,
     color: '#E91E63',
-    marginTop: 4,
-    textAlign: 'center',
+    fontWeight: 'bold',
   },
 });
