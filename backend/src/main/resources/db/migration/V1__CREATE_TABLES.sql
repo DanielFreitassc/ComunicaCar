@@ -15,9 +15,10 @@ CREATE INDEX idx_users_username ON users(username);
 
 -- Tabela 'services'
 CREATE TABLE services (
-    id UUID PRIMARY KEY,
+    id VARCHAR(36) PRIMARY KEY,
     ticket_number VARCHAR(20) UNIQUE,
     title VARCHAR(255) NOT NULL,
+    client_name VARCHAR(100) NOT NULL, 
     vehicle VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     contact_number VARCHAR(9) NOT NULL,
@@ -31,8 +32,8 @@ CREATE TABLE services (
 
 -- Tabela 'steps'
 CREATE TABLE steps (
-    id UUID PRIMARY KEY,
-    service_id UUID NOT NULL,
+    id VARCHAR(36) PRIMARY KEY,
+    service_id VARCHAR(36) NOT NULL,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -44,9 +45,9 @@ CREATE INDEX idx_step_service_id ON steps(service_id);
 
 -- Tabela 'media'
 CREATE TABLE media (
-    id UUID PRIMARY KEY,
-    step_id UUID NOT NULL,
-    image_id VARCHAR(255) NOT NULL UNIQUE,
+    id VARCHAR(36) PRIMARY KEY,
+    step_id VARCHAR(36) NOT NULL,
+    image_id VARCHAR(36) NOT NULL UNIQUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_media_step FOREIGN KEY (step_id) REFERENCES steps(id)

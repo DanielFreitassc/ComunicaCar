@@ -1,1 +1,0 @@
-ALTER TABLE services ADD COLUMN client_name VARCHAR(100) NOT NULL DEFAULT 'Cliente';
