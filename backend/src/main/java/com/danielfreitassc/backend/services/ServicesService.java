@@ -23,6 +23,7 @@ import com.danielfreitassc.backend.models.ServicesEntity;
 import com.danielfreitassc.backend.models.StatusEnum;
 import com.danielfreitassc.backend.models.StepEntity;
 import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.models.UserRole;
 import com.danielfreitassc.backend.repositories.ServiceTicketSequenceRepository;
 import com.danielfreitassc.backend.repositories.ServicesRepository;
 import com.danielfreitassc.backend.repositories.StepRepository;
@@ -53,10 +54,9 @@ public class ServicesService {
         return new MessageAndIdDto("Ordem de serviço cadastrada com sucesso", servicesEntity.getId());
     }
 
-    public Page<ServicesResponseDto> getServices(Pageable pageable, String status, String mechanicIdStr) {
+    public Page<ServicesResponseDto> getServices(Pageable pageable, String status, String mechanicIdStr, UserRole userRole) {
         StatusEnum statusEnum = null;
         UUID mechanicId = null;
-
         // Validação de status
         if (status != null && !status.isBlank()) {
             try {
@@ -66,19 +66,29 @@ public class ServicesService {
             }
         }
 
-        // Validação de mechanicId
-        if (mechanicIdStr != null && !mechanicIdStr.isBlank()) {
-            try {
-                mechanicId = UUID.fromString(mechanicIdStr);
-            } catch (IllegalArgumentException e) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mechanicId inválido");
+
+        if(userRole.equals(UserRole.EMPLOYEE_MECHANIC)) {
+            // Validação de mechanicId
+            if (mechanicIdStr != null && !mechanicIdStr.isBlank()) {
+                try {
+                    mechanicId = UUID.fromString(mechanicIdStr);
+                } catch (IllegalArgumentException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "mechanicId inválido");
+                }
             }
+
+        
+            Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndMechanicId(statusEnum, mechanicId);
+            Page<ServicesEntity> servicePage = servicesRepository.findAll(spec, pageable);
+
+            return servicePage.map(servicesMapper::toDto);
         }
 
-        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatusAndMechanicId(statusEnum, mechanicId);
-        Page<ServicesEntity> servicePage = servicesRepository.findAll(spec, pageable);
-
-        return servicePage.map(servicesMapper::toDto);
+        // Outras roles — apenas filtro por status
+        Specification<ServicesEntity> spec = ServicesSpecifications.filterByStatus(statusEnum);
+        Page<ServicesEntity> services = servicesRepository.findAll(spec, pageable);
+        return services.map(servicesMapper::toDto);
+       
     }
 
     public ServicesResponseDto getService(String id) {

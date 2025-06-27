@@ -1,5 +1,6 @@
 package com.danielfreitassc.backend.controlles;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -7,6 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.danielfreitassc.backend.dtos.AuthenticationDto;
 import com.danielfreitassc.backend.dtos.LoginResponseDto;
+import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.models.UserRole;
 import com.danielfreitassc.backend.services.AuthenticationService;
 
 import jakarta.validation.Valid;

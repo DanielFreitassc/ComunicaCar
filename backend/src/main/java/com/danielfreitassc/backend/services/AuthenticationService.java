@@ -11,6 +11,7 @@ import com.danielfreitassc.backend.dtos.AuthenticationDto;
 import com.danielfreitassc.backend.dtos.LoginResponseDto;
 import com.danielfreitassc.backend.infra.security.TokenService;
 import com.danielfreitassc.backend.models.UserEntity;
+import com.danielfreitassc.backend.models.UserRole;
 import com.danielfreitassc.backend.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,7 @@ public class AuthenticationService {
             user.resetLoginAttempts();
             userRepository.save(user);
 
-            return new LoginResponseDto(token);
+            return new LoginResponseDto(token, user.getRole());
         } catch (Exception e) {
             user.incrementLoginAttempts();
             if(user.getLoginAttempts() >= 4) {

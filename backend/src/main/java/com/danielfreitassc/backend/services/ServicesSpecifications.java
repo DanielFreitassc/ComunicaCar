@@ -27,6 +27,16 @@ public class ServicesSpecifications {
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
+
+        
     }
 
+    public static Specification<ServicesEntity> filterByStatus(StatusEnum status) {
+        return (root, query, criteriaBuilder) -> {
+            if (status == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("status"), status);
+        };
+    }
 }
