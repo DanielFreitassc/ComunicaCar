@@ -20,48 +20,75 @@ export function Images() {
   const route = useRoute();
   const navigation = useNavigation();
 
-  const { imageIds = [], initialImageId = null, stepId = null } = route.params || {};
+  const { stepId = null } = route.params || {};
 
-  const [images, setImages] = useState([]);
-  const [selectedId, setSelectedId] = useState(initialImageId);
+  const [images, setImages] = useState([]); // lista de { imageId, mediaId, url }
+  const [imageIdToMediaIdMap, setImageIdToMediaIdMap] = useState({});
+  const [selectedImageId, setSelectedImageId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (imageIds.length === 0) {
+    if (!stepId) {
+      Alert.alert('Erro', 'ID da etapa não fornecido.');
       setLoading(false);
       return;
     }
 
-    async function fetchImageUrls() {
+    async function fetchImages() {
       try {
         setLoading(true);
 
-        const urls = imageIds.map(id => ({
-          id,
-          url: `https://bucket-production-1ab0.up.railway.app:443/images/${id}`
+        // 1. Buscar etapas para pegar os imageIds da etapa atual
+        const stepsResponse = await api.get('/steps');
+        const steps = stepsResponse.data.content || [];
+
+        const currentStep = steps.find(s => s.id === stepId);
+        if (!currentStep) {
+          Alert.alert('Erro', 'Etapa não encontrada.');
+          setImages([]);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Buscar mídias para montar o mapa imageId -> mediaId
+        const mediaResponse = await api.get('/media?page=0&size=100');
+        const medias = mediaResponse.data.content || [];
+
+        const mapImageToMedia = {};
+        medias.forEach(m => {
+          mapImageToMedia[m.imageId] = m.id;
+        });
+        setImageIdToMediaIdMap(mapImageToMedia);
+
+        // 3. Montar array de imagens para renderizar
+        const imgs = currentStep.imageIds.map(imageId => ({
+          imageId,
+          mediaId: mapImageToMedia[imageId],
+          url: `https://bucket-production-1ab0.up.railway.app:443/images/${imageId}`,
         }));
 
-        setImages(urls);
-
-        if (!initialImageId && urls.length > 0) {
-          setSelectedId(urls[0].id);
+        setImages(imgs);
+        if (imgs.length > 0) {
+          setSelectedImageId(imgs[0].imageId);
         } else {
-          setSelectedId(initialImageId);
+          setSelectedImageId(null);
         }
+
       } catch (error) {
-        console.error('Erro ao montar URLs de imagem:', error);
+        console.error('Erro ao buscar imagens da etapa:', error);
+        Alert.alert('Erro', 'Falha ao carregar imagens.');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchImageUrls();
-  }, [imageIds, initialImageId]);
+    fetchImages();
+  }, [stepId]);
 
   async function handleAddImage() {
     try {
       if (!stepId) {
-        Alert.alert('ID da etapa não encontrado.');
+        Alert.alert('Erro', 'ID da etapa não encontrado.');
         return;
       }
 
@@ -97,33 +124,39 @@ export function Images() {
         },
       });
 
+      // Nova mídia criada: adicionar na lista
       const novaImagem = {
-        id: data?.id,
-        url: `https://bucket-production-1ab0.up.railway.app:443/images/${data?.id}`,
+        imageId: data.imageId,
+        mediaId: data.id,
+        url: `https://bucket-production-1ab0.up.railway.app:443/images/${data.imageId}`,
       };
 
-      setImages((prev) => [...prev, novaImagem]);
-      setSelectedId(data?.id);
-      
-      // ==========================================================
-      // CORREÇÃO: Exibindo a mensagem de sucesso da API
-      // ==========================================================
-      Alert.alert('Sucesso', data?.message || 'Imagem enviada com sucesso!');
+      setImages(prev => [...prev, novaImagem]);
+      setSelectedImageId(data.imageId);
+
+      // Atualizar o mapa para buscar pelo novo mediaId também
+      setImageIdToMediaIdMap(prev => ({
+        ...prev,
+        [data.imageId]: data.id,
+      }));
+
+      Alert.alert('Sucesso', data.message || 'Imagem enviada com sucesso!');
 
     } catch (error) {
-      // Logando a resposta completa do erro para facilitar a depuração
       console.error("ERRO AO ADICIONAR IMAGEM:", error.response?.data || error.message);
-      
-      // ==========================================================
-      // CORREÇÃO: Exibindo a mensagem de erro da API
-      // ==========================================================
       const errorMessage = error.response?.data?.message || 'Não foi possível enviar a imagem.';
       Alert.alert('Erro', errorMessage);
     }
   }
 
   async function handleRemoveImage() {
-    if (!selectedId) return;
+    if (!selectedImageId) return;
+
+    const mediaId = imageIdToMediaIdMap[selectedImageId];
+    if (!mediaId) {
+      Alert.alert('Erro', 'ID do media não encontrado para a imagem selecionada.');
+      return;
+    }
 
     Alert.alert(
       'Remover imagem',
@@ -135,22 +168,22 @@ export function Images() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const { data } = await api.delete(`/media/${selectedId}`);
+              const { data } = await api.delete(`/media/${mediaId}`);
 
-              const novaLista = images.filter(img => img.id !== selectedId);
+              const novaLista = images.filter(img => img.imageId !== selectedImageId);
               setImages(novaLista);
 
               if (novaLista.length > 0) {
-                setSelectedId(novaLista[0].id);
+                setSelectedImageId(novaLista[0].imageId);
               } else {
-                setSelectedId(null);
+                setSelectedImageId(null);
               }
-              
+
               Alert.alert('Sucesso', data?.message || 'Imagem removida com sucesso!');
 
             } catch (error) {
               console.error("ERRO AO REMOVER IMAGEM:", error.response?.data || error.message);
-              
+
               const errorMessage = error.response?.data?.message || 'Não foi possível remover a imagem.';
               Alert.alert('Erro', errorMessage);
             }
@@ -160,7 +193,7 @@ export function Images() {
     );
   }
 
-  const selectedImage = images.find(img => img.id === selectedId);
+  const selectedImage = images.find(img => img.imageId === selectedImageId);
 
   return (
     <Container>
@@ -187,8 +220,10 @@ export function Images() {
       ) : images.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Nenhuma imagem disponível.</Text>
-          <TouchableOpacity onPress={handleAddImage} style={{marginTop: 15}}>
-              <Text style={{color: colors.secondary, fontWeight: 'bold'}}>Adicionar a primeira imagem</Text>
+          <TouchableOpacity onPress={handleAddImage} style={{ marginTop: 15 }}>
+            <Text style={{ color: colors.secondary, fontWeight: 'bold' }}>
+              Adicionar a primeira imagem
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -204,19 +239,16 @@ export function Images() {
           <View style={styles.thumbnailBar}>
             <FlatList
               data={images}
-              keyExtractor={(item) => item.id}
+              keyExtractor={item => item.imageId}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.listContainer}
               renderItem={({ item }) => {
-                const isSelected = item.id === selectedId;
+                const isSelected = item.imageId === selectedImageId;
                 return (
                   <TouchableOpacity
-                    onPress={() => setSelectedId(item.id)}
-                    style={[
-                      styles.thumbnailWrapper,
-                      isSelected && styles.selectedThumbnail,
-                    ]}
+                    onPress={() => setSelectedImageId(item.imageId)}
+                    style={[styles.thumbnailWrapper, isSelected && styles.selectedThumbnail]}
                   >
                     <Image
                       source={{ uri: item.url }}
@@ -235,10 +267,6 @@ export function Images() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -267,7 +295,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 8,
-    alignItems: 'center'
+    alignItems: 'center',
   },
   thumbnailWrapper: {
     marginHorizontal: 6,
