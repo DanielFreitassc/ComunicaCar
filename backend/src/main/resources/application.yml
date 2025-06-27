@@ -6,6 +6,12 @@ spring:
         #url: jdbc:h2:mem:db
         username: ${POSTGRESS_USER:postgres}
         password: ${POSTGRESS_PASSWORD:postgres}
+
+    servlet:
+        multipart:
+        enabled: true
+        max-file-size: 50MB
+        max-request-size: 50MB
 api:
  security:
     token:
@@ -21,3 +27,4 @@ user:
     mock:
         username: admin
         password: admin
+    
