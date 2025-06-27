@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "ComunicaCar",
+    "slug": "ComunicaCar",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.app"
+      "bundleIdentifier": "com.gurizes.ComunicaCar"
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.app"
+      "package": "com.gurizes.ComunicaCar"
     },
     "web": {
       "favicon": "./assets/favicon.png"
