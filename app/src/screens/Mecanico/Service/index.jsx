@@ -77,14 +77,12 @@ export function Service() {
 
             try {
               await api.put(`/services/${service.id}`, payload);
-              // **CORREÇÃO: Adicionado o botão "Ok" com a ação de fechar a tela**
               Alert.alert(
                 "Sucesso!", 
                 "O estado do serviço foi atualizado para 'Pronto'.",
                 [
                   {
                     text: "Ok",
-                    // Ao pressionar "Ok", a tela voltará para a anterior (Home)
                     onPress: () => navigation.goBack(),
                   }
                 ]
@@ -100,7 +98,6 @@ export function Service() {
     );
   }
   
-  // O resto do seu código permanece o mesmo...
   async function handleSave() {
     try {
       const index = editandoIndex !== null ? editandoIndex : etapas.length - 1;
@@ -184,21 +181,33 @@ export function Service() {
     setEditandoIndex(index);
   }
 
+  // ========================================================================
+  // INÍCIO DA CORREÇÃO
+  // ========================================================================
   async function handleImagemEtapa(index) {
     const etapa = etapas[index];
-    if (etapa?.imageIds?.length > 0) {
-      navigation.navigate('Mecanico', {
-        screen: 'Service',
-        params: {
-          Service: service,
-          status: service.status || 'PENDING',
-        },
-      });
 
-    } else {
-      await enviarNovaImagem(index);
+    // Uma etapa precisa ser salva (ter um ID) antes de poder adicionar imagens.
+    if (!etapa.id) {
+      Alert.alert("Atenção", "Você precisa salvar a etapa antes de adicionar imagens.");
+      return;
     }
+
+    // A lógica agora é sempre navegar para a tela 'Images'.
+    // Essa tela já é capaz de lidar com etapas com ou sem imagens,
+    // e possui o botão para adicionar novas fotos.
+    navigation.navigate('Mecanico', {
+      screen: 'Images', // CORREÇÃO: Navegar para a tela de Imagens
+      params: {
+        // Passando os parâmetros corretos que a tela 'Images' espera
+        imageIds: etapa.imageIds || [],
+        stepId: etapa.id,
+      },
+    });
   }
+  // ========================================================================
+  // FIM DA CORREÇÃO
+  // ========================================================================
 
   async function enviarNovaImagem(index) {
     try {

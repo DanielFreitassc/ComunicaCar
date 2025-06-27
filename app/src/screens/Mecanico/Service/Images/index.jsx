@@ -45,6 +45,8 @@ export function Images() {
 
         if (!initialImageId && urls.length > 0) {
           setSelectedId(urls[0].id);
+        } else {
+          setSelectedId(initialImageId);
         }
       } catch (error) {
         console.error('Erro ao montar URLs de imagem:', error);
@@ -102,11 +104,21 @@ export function Images() {
 
       setImages((prev) => [...prev, novaImagem]);
       setSelectedId(data?.id);
+      
+      // ==========================================================
+      // CORREÇÃO: Exibindo a mensagem de sucesso da API
+      // ==========================================================
+      Alert.alert('Sucesso', data?.message || 'Imagem enviada com sucesso!');
 
-      Alert.alert('Sucesso', 'Imagem enviada com sucesso!');
     } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Erro ao enviar imagem.');
+      // Logando a resposta completa do erro para facilitar a depuração
+      console.error("ERRO AO ADICIONAR IMAGEM:", error.response?.data || error.message);
+      
+      // ==========================================================
+      // CORREÇÃO: Exibindo a mensagem de erro da API
+      // ==========================================================
+      const errorMessage = error.response?.data?.message || 'Não foi possível enviar a imagem.';
+      Alert.alert('Erro', errorMessage);
     }
   }
 
@@ -123,7 +135,7 @@ export function Images() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await api.delete(`/medias/${selectedId}`);
+              const { data } = await api.delete(`/media/${selectedId}`);
 
               const novaLista = images.filter(img => img.id !== selectedId);
               setImages(novaLista);
@@ -133,11 +145,14 @@ export function Images() {
               } else {
                 setSelectedId(null);
               }
+              
+              Alert.alert('Sucesso', data?.message || 'Imagem removida com sucesso!');
 
-              Alert.alert('Sucesso', 'Imagem removida com sucesso!');
             } catch (error) {
-              console.error(error);
-              Alert.alert('Erro', 'Erro ao remover imagem.');
+              console.error("ERRO AO REMOVER IMAGEM:", error.response?.data || error.message);
+              
+              const errorMessage = error.response?.data?.message || 'Não foi possível remover a imagem.';
+              Alert.alert('Erro', errorMessage);
             }
           },
         },
@@ -172,6 +187,9 @@ export function Images() {
       ) : images.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>Nenhuma imagem disponível.</Text>
+          <TouchableOpacity onPress={handleAddImage} style={{marginTop: 15}}>
+              <Text style={{color: colors.secondary, fontWeight: 'bold'}}>Adicionar a primeira imagem</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <>
@@ -235,8 +253,8 @@ const styles = StyleSheet.create({
     color: colors.secondary,
   },
   mainImage: {
+    flex: 1,
     width: '100%',
-    height: 300,
     backgroundColor: '#EEE',
   },
   thumbnailBar: {
@@ -249,6 +267,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     paddingHorizontal: 8,
+    alignItems: 'center'
   },
   thumbnailWrapper: {
     marginHorizontal: 6,
