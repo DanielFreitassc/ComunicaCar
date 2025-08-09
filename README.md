@@ -5,4 +5,3 @@ Alunos:
 - Geanlucca Zappe
 - Paulo Fontanela
 - Bruno Sezar
-
